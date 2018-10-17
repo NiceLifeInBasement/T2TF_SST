@@ -1,0 +1,30 @@
+Fusion von daten des perzeptionssystems des ego-fahrzeugs mit daten aus mehreren externen perzeptionssystemen.
+Diese daten werden vorher zusätzlich noch durch kommunikation/koordinatentransformation aufbereitet.
+
+Daten müssen zeitsynchron sein, UTC zeitstempel zu daten hinzufügen.
+Koordinatensystem in relation zum auto: Aus sicht des fahrers: y achse positiv nach links, z achse positiv nach oben,
+x achse positiv nach vorn. Ursprung des koord.-systems ist die projektion des mittelpunkts der vorderen stoßstange auf
+die Fahrbahn.
+
+EIS: Ego Information Structure
+EIS Daten die übermittelt und empfangen werden müssen transformiert werden, und zwar für Position, Orientierung,
+Geschwindigkeit und Drehraten.
+
+FOV - Sichtbarkeitsanalyse mit einbeziehen
+
+Algorithmen können mit oder ohne memory sein: mit memory hat das problem, dass bestimmte messungen eines sensors und
+des finalen systemergebnis auf den gleichen verrauschten sensormessungen basieren -> correlated errors! ohne memory hat
+dieses problem nicht, aber ist weniger stark da alte ergebnisse nicht mit einbezogen werden.
+(Wenn ich verschiedene paper richtig verstehe: sensor to sensor track fusion ist memoryless, und sensor to system track
+fusion beinhaltet memory)
+
+The  inputs  to  track  fusion  are  sensor tracks  formed  from  local  measurements  and  represented  by  position
+and  velocity  estimates  and  their error covariance matrices. (i.e.: no fusion of measurement data)
+
+T2TF ist verhähltnismäßig leicht, wenn die schätzfehler unkorreliert sind.
+
+Wichtige schritte sind: 1. track-to-track association und 2. fusion of target state estimates given association hypo.
+
+a tracklet  is  loosely  defined  as  a  track  segment  computed  so  that  its  errors  are  not  cross-correlated
+with the errors of other track segments.
+

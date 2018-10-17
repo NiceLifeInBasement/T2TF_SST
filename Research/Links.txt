@@ -1,0 +1,40 @@
+http://www.ftm.mw.tum.de/uploads/media/17_Seeliger.pdf
+	Link von Fabian/Baum
+	Präsentation zu "Fahrzeugübergreifende Informationsfusion"
+
+
+https://oparu.uni-ulm.de/xmlui/bitstream/handle/123456789/4991/Diss_Seeliger.pdf?sequence=1&isAllowed=y
+    "Fahrzeugübergreifende Informationsfusion für ein Kreuzungsassistenzsystem"
+    Doktorarbeit zu T2TF, von der gleichen person wie der link von fabian
+    enthält einiges an informationen, stellt detailliert einige algorithmen da usw
+
+
+https://ieeexplore.ieee.org/document/4648063
+    "A comparison of track-to-track fusion algorithms for automotive sensor fusion"
+    Sollte interessant zu lesen sein, vergleicht bekannte algorithmen mit bspw. Kalman filter
+
+
+http://www.dtic.mil/dtic/tr/fulltext/u2/1005849.pdf
+    "Track-to-Track Fusion Architectures - A Review"
+
+
+http://fusion.isif.org/proceedings/fusion99CD/C-134.pdf?
+    "Architectures and Algorithms for Track Association and Fusion"
+    readable introduction to track fusion
+
+
+http://fusion.isif.org/proceedings/fusion01CD/fusion/searchengine/pdf/TuB14.pdf?
+    "Performance Limits of Track-to-Track Fusion vs. Centralized Estimation:  Theory and Application"
+
+
+https://pdfs.semanticscholar.org/eb7b/55de8ca65ae2dd68179b062da0029d7a762d.pdf
+    "Algorithms for Asynchronous Track-to-Track Fusion"
+    math-heavy, beschreibt allerlei ansätze (IMF, partial feedback/full feedback etc)
+
+
+https://pdfs.semanticscholar.org/596c/66c3d6e547a54f2e71092f72b5fd4019cdd8.pdf
+    Evaluating Hierarchical Track Fusion with Information Matrix Filter
+
+
+
+

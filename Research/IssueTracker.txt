@@ -1,0 +1,6 @@
+#1:
+    (not sure, since I'm new to ROS)
+    to subscribe to a certain message type, you need the package containing it as a dependency
+    however, I only have access to the bag file, not the actual package
+
+    would need the .msg files to read data from the bag

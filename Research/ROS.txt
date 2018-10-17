@@ -1,0 +1,13 @@
+Working in the Catkin Workspace (~/catkin_ws)
+    this is the package location as well (create them using catkin_create_pkg
+
+Use catkin_make to build packages
+    after making packages, you need to "source ./devel/setup.bash" once
+
+execute your file by using for example "rosrun t2tf_sst test.py"
+    i.e. "rosrun <package_name> <executable_node_name>"
+    for this the node needs to be executable (chmod +x <file>)
+
+python files need to start with "#!/usr/bin/env python"
+    no spaces allowed, no comments before that
+    keyword "shebang line"
