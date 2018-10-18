@@ -1,2 +1,5 @@
 https://stats.stackexchange.com/questions/49901/intuitive-understanding-covariance-cross-covariance-auto-cross-correliation-a
     intuitive explanation of covariance, correlation, auto-correlation, cross correlation, auto-covariance, cross-cov
+
+
+quick test if git works
