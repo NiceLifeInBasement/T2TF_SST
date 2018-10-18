@@ -28,3 +28,6 @@ Wichtige schritte sind: 1. track-to-track association und 2. fusion of target st
 a tracklet  is  loosely  defined  as  a  track  segment  computed  so  that  its  errors  are  not  cross-correlated
 with the errors of other track segments.
 
+es gibt einige sehr ähnliche begriffe in versch papern, die verschiedenes aussagen:
+    sensor-to-track fusion: asynchron sensor daten bspw durch einen kalman filter fusen
+    sensor-to-sensor track fusion/sensor-to-system track: s.o., beides t2tf, aber das eine synchron das andere nicht(?)

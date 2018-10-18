@@ -11,7 +11,9 @@ https://oparu.uni-ulm.de/xmlui/bitstream/handle/123456789/4991/Diss_Seeliger.pdf
 
 https://ieeexplore.ieee.org/document/4648063
     "A comparison of track-to-track fusion algorithms for automotive sensor fusion"
-    Sollte interessant zu lesen sein, vergleicht bekannte algorithmen mit bspw. Kalman filter
+    definitiv interessant, beschreibt 3 standard T2TF algorithmen
+        cross cov, cov intersection, cov union
+    untersucht diese auch bzgl laufzeit
 
 
 http://www.dtic.mil/dtic/tr/fulltext/u2/1005849.pdf

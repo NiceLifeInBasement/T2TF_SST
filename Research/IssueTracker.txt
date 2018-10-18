@@ -4,9 +4,31 @@
     however, I only have access to the bag file, not the actual package
 
     would need the .msg files to read data from the bag
-
+    --> Will talk to dlr to see if this data is available
 
 #2:
     message structure is not documented
     would probably get solved by getting the .msg files
     need to know this to correctly read ALL available data (instead of working only with the parts I found to be useful)
+    --> Will talk to dlr to see if this data is available
+
+#3:
+    clear definition of the goal
+    there are papers re: evaluation of different T2TF algorithms
+    goal to implement this for the ROS system/this specific data?
+    if evaluation is part of the goal: ground truth?
+    --> no ground truth exist
+    --> For now, implement one algorithm as a baseline and check whether the results make sense at all
+
+#4:
+    Velocity appears to go down to 0 for (long-ish) intervals
+    in topic /trackedObjects/Scan
+    possibly normal, or possibly needs to be disregarded
+
+#5:
+    rqt_bag appears to have issues reading the data field of certain topics (e.g. /point_obstacles)
+    not sure whether this affects any topics relevant for me
+
+
+
+

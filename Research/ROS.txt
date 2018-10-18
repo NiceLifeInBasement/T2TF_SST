@@ -3,6 +3,7 @@ Working in the Catkin Workspace (~/catkin_ws)
 
 Use catkin_make to build packages
     after making packages, you need to "source ./devel/setup.bash" once
+    or before executing anything in that terminal? not 100% sure
 
 execute your file by using for example "rosrun t2tf_sst test.py"
     i.e. "rosrun <package_name> <executable_node_name>"

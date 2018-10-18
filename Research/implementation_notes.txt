@@ -1,0 +1,14 @@
+Most relevant data seems to be in topic /tracked_objects/scan
+    >boxes>[i]>box>header>...
+    this contains x,y coordinates, angle, length and width along with velocity information
+
+    probably need to use this when looking for information to fuse
+
+
+think about what coordinate system you will use, or if this is basically predetermined by the way the data is given
+
+
+maybe start by using covariance intersection (CI) or FCI/I-FCI, try to get that running as a baseline
+    since CI (variants) come with pretty clean formulas to implement
+    and not a lot of data is needed for CI (see seeliger slides)
+    from my current perspective this looks like the most promising algorithm for a baseline
