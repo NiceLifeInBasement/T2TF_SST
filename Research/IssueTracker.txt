@@ -29,6 +29,9 @@
     rqt_bag appears to have issues reading the data field of certain topics (e.g. /point_obstacles)
     not sure whether this affects any topics relevant for me
 
+#6:
+    fusion of which data exactly? given is only one track
+
 
 
 

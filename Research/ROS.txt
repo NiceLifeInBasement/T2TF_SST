@@ -12,3 +12,11 @@ execute your file by using for example "rosrun t2tf_sst test.py"
 python files need to start with "#!/usr/bin/env python"
     no spaces allowed, no comments before that
     keyword "shebang line"
+
+---
+Importing messages from another package
+    Make sure you always "source ./devel/setup.bash"
+    The CMakeLists of the package with the messages need to have the following uncommented
+        add_message_files(...)
+        generate_messages(...)
+    Also make sure CMakeLists has message_generation, message_runtime listed under find_package()

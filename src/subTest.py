@@ -2,6 +2,8 @@
 import rospy
 import rostopic
 from std_msgs.msg import String
+from bob_perception_msgs.msg import *
+
 
 
 def callback(data):
@@ -18,11 +20,11 @@ def listener():
     rospy.init_node('listener', anonymous=True)
 
 
-    rospy.Subscriber("chatter", String, callback)
+    # rospy.Subscriber("chatter", String, callback)
     # can use msg type "rospy.msg.AnyMsg" to subscribe to any topic you want, but the resulting data is useless
     #   since it is not deserialized
-    rospy.Subscriber("tracked_objects/scan", rospy.msg.AnyMsg, callback)
-    # rospy.Subscriber("tracked_objects/scan", bob_perception_msgs/TrackedLaserScan/cbf82c106cc765795116663d337cea66, callback)
+    # rospy.Subscriber("tracked_objects/scan", rospy.msg.AnyMsg, callback)
+    rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback)
 
     # spin() simply keeps python from exiting until this node is stopped
     rospy.spin()

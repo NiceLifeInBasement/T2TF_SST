@@ -1,0 +1,1314 @@
+('Message type:', 'sensor_msgs/Image')
+Message text:
+# This message contains an uncompressed image
+# (0, 0) is at top-left corner of image
+#
+
+Header header        # Header timestamp should be acquisition time of image
+                     # Header frame_id should be optical frame of camera
+                     # origin of frame should be optical center of cameara
+                     # +x should point to the right in the image
+                     # +y should point down in the image
+                     # +z should point into to plane of the image
+                     # If the frame_id here and the frame_id of the CameraInfo
+                     # message associated with the image conflict
+                     # the behavior is undefined
+
+uint32 height         # image height, that is, number of rows
+uint32 width          # image width, that is, number of columns
+
+# The legal values for encoding are in file src/image_encodings.cpp
+# If you want to standardize a new string format, join
+# ros-users@lists.sourceforge.net and send an email proposing a new encoding.
+
+string encoding       # Encoding of pixels -- channel meaning, ordering, size
+                      # taken from the list of strings in include/sensor_msgs/image_encodings.h
+
+uint8 is_bigendian    # is this data bigendian?
+uint32 step           # Full row length in bytes
+uint8[] data          # actual matrix data, size is (step * rows)
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+
+('Message type:', 'bob_perception_msgs/ObjectLevelFusionResult')
+Message text:
+Header                              header
+
+TrackedLaserScan                    scan    # Contains raw point measurements
+                                            # and fused boxes.
+
+bob_common_msgs/MapIntToStringArray box_to_source # Maps from box index in
+                                                  # scan.boxes
+                                                  # to list of source names,
+                                                  # e.g., "lidar", "radar".
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: bob_perception_msgs/TrackedLaserScan
+Header header
+TrackedOrientedBox[] boxes           # Contains oriented bounding boxes.
+sensor_msgs/PointCloud2 point_cloud  # Contains a raw point cloud measurement
+                                     # with z=0 in header.frame_id (assuming
+                                     # 2D laser scan data).
+int32[] point_to_box                 # Contains for each point in the
+                                     # point_cloud an index to boxes.
+
+================================================================================
+MSG: bob_perception_msgs/TrackedOrientedBox
+uint64 object_id
+OrientedBox box
+
+================================================================================
+MSG: bob_perception_msgs/OrientedBox
+Header header
+float64 center_x      # Box center position x-coordinate.
+float64 center_y      # Box center position y-coordinate.
+float64 angle         # Orientation in rad.
+float64 length        # Box dimension 1, in direction of the orientation.
+float64 width         # Box dimension 2, orthogonal to dimension 1.
+float64 velocity_x    # Optional velocity vector x-coordinate.
+float64 velocity_y    # Optional velocity vector y-coordinate.
+
+================================================================================
+MSG: sensor_msgs/PointCloud2
+# This message holds a collection of N-dimensional points, which may
+# contain additional information such as normals, intensity, etc. The
+# point data is stored as a binary blob, its layout described by the
+# contents of the "fields" array.
+
+# The point cloud data may be organized 2d (image-like) or 1d
+# (unordered). Point clouds organized as 2d images may be produced by
+# camera depth sensors such as stereo or time-of-flight.
+
+# Time of sensor data acquisition, and the coordinate frame ID (for 3d
+# points).
+Header header
+
+# 2D structure of the point cloud. If the cloud is unordered, height is
+# 1 and width is the length of the point cloud.
+uint32 height
+uint32 width
+
+# Describes the channels and their layout in the binary data blob.
+PointField[] fields
+
+bool    is_bigendian # Is this data bigendian?
+uint32  point_step   # Length of a point in bytes
+uint32  row_step     # Length of a row in bytes
+uint8[] data         # Actual point data, size is (row_step*height)
+
+bool is_dense        # True if there are no invalid points
+
+================================================================================
+MSG: sensor_msgs/PointField
+# This message holds the description of one point entry in the
+# PointCloud2 message format.
+uint8 INT8    = 1
+uint8 UINT8   = 2
+uint8 INT16   = 3
+uint8 UINT16  = 4
+uint8 INT32   = 5
+uint8 UINT32  = 6
+uint8 FLOAT32 = 7
+uint8 FLOAT64 = 8
+
+string name      # Name of field
+uint32 offset    # Offset from start of point struct
+uint8  datatype  # Datatype enumeration, see above
+uint32 count     # How many elements in the field
+
+================================================================================
+MSG: bob_common_msgs/MapIntToStringArray
+KeyIntValueStringArray[] key_value_pairs
+
+================================================================================
+MSG: bob_common_msgs/KeyIntValueStringArray
+int64       key
+StringArray value
+
+================================================================================
+MSG: bob_common_msgs/StringArray
+string[] entries
+
+
+('Message type:', 'nav_msgs/Odometry')
+Message text:
+# This represents an estimate of a position and velocity in free space.  
+# The pose in this message should be specified in the coordinate frame given by header.frame_id.
+# The twist in this message should be specified in the coordinate frame given by the child_frame_id
+Header header
+string child_frame_id
+geometry_msgs/PoseWithCovariance pose
+geometry_msgs/TwistWithCovariance twist
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: geometry_msgs/PoseWithCovariance
+# This represents a pose in free space with uncertainty.
+
+Pose pose
+
+# Row-major representation of the 6x6 covariance matrix
+# The orientation parameters use a fixed-axis representation.
+# In order, the parameters are:
+# (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+float64[36] covariance
+
+================================================================================
+MSG: geometry_msgs/Pose
+# A representation of pose in free space, composed of position and orientation. 
+Point position
+Quaternion orientation
+
+================================================================================
+MSG: geometry_msgs/Point
+# This contains the position of a point in free space
+float64 x
+float64 y
+float64 z
+
+================================================================================
+MSG: geometry_msgs/Quaternion
+# This represents an orientation in free space in quaternion form.
+
+float64 x
+float64 y
+float64 z
+float64 w
+
+================================================================================
+MSG: geometry_msgs/TwistWithCovariance
+# This expresses velocity in free space with uncertainty.
+
+Twist twist
+
+# Row-major representation of the 6x6 covariance matrix
+# The orientation parameters use a fixed-axis representation.
+# In order, the parameters are:
+# (x, y, z, rotation about X axis, rotation about Y axis, rotation about Z axis)
+float64[36] covariance
+
+================================================================================
+MSG: geometry_msgs/Twist
+# This expresses velocity in free space broken into its linear and angular parts.
+Vector3  linear
+Vector3  angular
+
+================================================================================
+MSG: geometry_msgs/Vector3
+# This represents a vector in free space. 
+# It is only meant to represent a direction. Therefore, it does not
+# make sense to apply a translation to it (e.g., when applying a 
+# generic rigid transformation to a Vector3, tf2 will only apply the
+# rotation). If you want your data to be translatable too, use the
+# geometry_msgs/Point message instead.
+
+float64 x
+float64 y
+float64 z
+
+
+('Message type:', 'sensor_msgs/PointCloud2')
+Message text:
+# This message holds a collection of N-dimensional points, which may
+# contain additional information such as normals, intensity, etc. The
+# point data is stored as a binary blob, its layout described by the
+# contents of the "fields" array.
+
+# The point cloud data may be organized 2d (image-like) or 1d
+# (unordered). Point clouds organized as 2d images may be produced by
+# camera depth sensors such as stereo or time-of-flight.
+
+# Time of sensor data acquisition, and the coordinate frame ID (for 3d
+# points).
+Header header
+
+# 2D structure of the point cloud. If the cloud is unordered, height is
+# 1 and width is the length of the point cloud.
+uint32 height
+uint32 width
+
+# Describes the channels and their layout in the binary data blob.
+PointField[] fields
+
+bool    is_bigendian # Is this data bigendian?
+uint32  point_step   # Length of a point in bytes
+uint32  row_step     # Length of a row in bytes
+uint8[] data         # Actual point data, size is (row_step*height)
+
+bool is_dense        # True if there are no invalid points
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: sensor_msgs/PointField
+# This message holds the description of one point entry in the
+# PointCloud2 message format.
+uint8 INT8    = 1
+uint8 UINT8   = 2
+uint8 INT16   = 3
+uint8 UINT16  = 4
+uint8 INT32   = 5
+uint8 UINT32  = 6
+uint8 FLOAT32 = 7
+uint8 FLOAT64 = 8
+
+string name      # Name of field
+uint32 offset    # Offset from start of point struct
+uint8  datatype  # Datatype enumeration, see above
+uint32 count     # How many elements in the field
+
+
+('Message type:', 'ros_dominion_msgs/CamEGolfObjects')
+Message text:
+std_msgs/Header header
+CamEGolfObject[] targets
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: ros_dominion_msgs/CamEGolfObject
+int32 id
+geometry_msgs/Point target_point
+float32 width
+bool turn_indicator_left_detected
+bool turn_indicator_right_detected
+bool brake_indicator_detected
+float32 confidence
+float32 standard_deviation_x
+float32 standard_deviation_y
+float32 standard_deviation_width
+int8 vehicle_type
+int8 object_state
+
+
+================================================================================
+MSG: geometry_msgs/Point
+# This contains the position of a point in free space
+float64 x
+float64 y
+float64 z
+
+
+('Message type:', 'dynamic_reconfigure/ConfigDescription')
+Message text:
+Group[] groups
+Config max
+Config min
+Config dflt
+
+================================================================================
+MSG: dynamic_reconfigure/Group
+string name
+string type
+ParamDescription[] parameters
+int32 parent 
+int32 id
+
+================================================================================
+MSG: dynamic_reconfigure/ParamDescription
+string name
+string type
+uint32 level
+string description
+string edit_method
+
+================================================================================
+MSG: dynamic_reconfigure/Config
+BoolParameter[] bools
+IntParameter[] ints
+StrParameter[] strs
+DoubleParameter[] doubles
+GroupState[] groups
+
+================================================================================
+MSG: dynamic_reconfigure/BoolParameter
+string name
+bool value
+
+================================================================================
+MSG: dynamic_reconfigure/IntParameter
+string name
+int32 value
+
+================================================================================
+MSG: dynamic_reconfigure/StrParameter
+string name
+string value
+
+================================================================================
+MSG: dynamic_reconfigure/DoubleParameter
+string name
+float64 value
+
+================================================================================
+MSG: dynamic_reconfigure/GroupState
+string name
+bool state
+int32 id
+int32 parent
+
+
+('Message type:', 'diagnostic_msgs/DiagnosticArray')
+Message text:
+# This message is used to send diagnostic information about the state of the robot
+Header header #for timestamp
+DiagnosticStatus[] status # an array of components being reported on
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: diagnostic_msgs/DiagnosticStatus
+# This message holds the status of an individual component of the robot.
+# 
+
+# Possible levels of operations
+byte OK=0
+byte WARN=1
+byte ERROR=2
+byte STALE=3
+
+byte level # level of operation enumerated above 
+string name # a description of the test/component reporting
+string message # a description of the status
+string hardware_id # a hardware unique string
+KeyValue[] values # an array of values associated with the status
+
+
+================================================================================
+MSG: diagnostic_msgs/KeyValue
+string key # what to label this value when viewing
+string value # a value to track over time
+
+
+('Message type:', 'sensor_msgs/NavSatFix')
+Message text:
+# Navigation Satellite fix for any Global Navigation Satellite System
+#
+# Specified using the WGS 84 reference ellipsoid
+
+# header.stamp specifies the ROS time for this measurement (the
+#        corresponding satellite time may be reported using the
+#        sensor_msgs/TimeReference message).
+#
+# header.frame_id is the frame of reference reported by the satellite
+#        receiver, usually the location of the antenna.  This is a
+#        Euclidean frame relative to the vehicle, not a reference
+#        ellipsoid.
+Header header
+
+# satellite fix status information
+NavSatStatus status
+
+# Latitude [degrees]. Positive is north of equator; negative is south.
+float64 latitude
+
+# Longitude [degrees]. Positive is east of prime meridian; negative is west.
+float64 longitude
+
+# Altitude [m]. Positive is above the WGS 84 ellipsoid
+# (quiet NaN if no altitude is available).
+float64 altitude
+
+# Position covariance [m^2] defined relative to a tangential plane
+# through the reported position. The components are East, North, and
+# Up (ENU), in row-major order.
+#
+# Beware: this coordinate system exhibits singularities at the poles.
+
+float64[9] position_covariance
+
+# If the covariance of the fix is known, fill it in completely. If the
+# GPS receiver provides the variance of each measurement, put them
+# along the diagonal. If only Dilution of Precision is available,
+# estimate an approximate covariance from that.
+
+uint8 COVARIANCE_TYPE_UNKNOWN = 0
+uint8 COVARIANCE_TYPE_APPROXIMATED = 1
+uint8 COVARIANCE_TYPE_DIAGONAL_KNOWN = 2
+uint8 COVARIANCE_TYPE_KNOWN = 3
+
+uint8 position_covariance_type
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: sensor_msgs/NavSatStatus
+# Navigation Satellite fix status for any Global Navigation Satellite System
+
+# Whether to output an augmented fix is determined by both the fix
+# type and the last time differential corrections were received.  A
+# fix is valid when status >= STATUS_FIX.
+
+int8 STATUS_NO_FIX =  -1        # unable to fix position
+int8 STATUS_FIX =      0        # unaugmented fix
+int8 STATUS_SBAS_FIX = 1        # with satellite-based augmentation
+int8 STATUS_GBAS_FIX = 2        # with ground-based augmentation
+
+int8 status
+
+# Bits defining which Global Navigation Satellite System signals were
+# used by the receiver.
+
+uint16 SERVICE_GPS =     1
+uint16 SERVICE_GLONASS = 2
+uint16 SERVICE_COMPASS = 4      # includes BeiDou.
+uint16 SERVICE_GALILEO = 8
+
+uint16 service
+
+
+('Message type:', 'bond/Status')
+Message text:
+Header header
+string id  # ID of the bond
+string instance_id  # Unique ID for an individual in a bond
+bool active
+
+# Including the timeouts for the bond makes it easier to debug mis-matches
+# between the two sides.
+float32 heartbeat_timeout
+float32 heartbeat_period
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+
+('Message type:', 'tf2_msgs/TFMessage')
+Message text:
+geometry_msgs/TransformStamped[] transforms
+
+================================================================================
+MSG: geometry_msgs/TransformStamped
+# This expresses a transform from coordinate frame header.frame_id
+# to the coordinate frame child_frame_id
+#
+# This message is mostly used by the 
+# <a href="http://wiki.ros.org/tf">tf</a> package. 
+# See its documentation for more information.
+
+Header header
+string child_frame_id # the frame id of the child frame
+Transform transform
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: geometry_msgs/Transform
+# This represents the transform between two coordinate frames in free space.
+
+Vector3 translation
+Quaternion rotation
+
+================================================================================
+MSG: geometry_msgs/Vector3
+# This represents a vector in free space. 
+# It is only meant to represent a direction. Therefore, it does not
+# make sense to apply a translation to it (e.g., when applying a 
+# generic rigid transformation to a Vector3, tf2 will only apply the
+# rotation). If you want your data to be translatable too, use the
+# geometry_msgs/Point message instead.
+
+float64 x
+float64 y
+float64 z
+================================================================================
+MSG: geometry_msgs/Quaternion
+# This represents an orientation in free space in quaternion form.
+
+float64 x
+float64 y
+float64 z
+float64 w
+
+
+('Message type:', 'rosgraph_msgs/Log')
+Message text:
+##
+## Severity level constants
+##
+byte DEBUG=1 #debug level
+byte INFO=2  #general level
+byte WARN=4  #warning level
+byte ERROR=8 #error level
+byte FATAL=16 #fatal/critical level
+##
+## Fields
+##
+Header header
+byte level
+string name # name of the node
+string msg # message 
+string file # file the message came from
+string function # function the message came from
+uint32 line # line the message came from
+string[] topics # topic names that the node publishes
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+
+('Message type:', 'novatel_msgs/GpsTime')
+Message text:
+### This is the ros msg of NovAtel-style GPS time logs.
+
+## ROS message header
+Header header
+
+## Relevant Information from NovAtel Log Header
+
+# Time status
+uint8 TIME_STATUS_UNKNOWN = 20            # Time validity is unknown.
+uint8 TIME_STATUS_APPROXIMATE = 60        # Time is set approximately.
+uint8 TIME_STATUS_COARSEADJUSTING = 80    # Time is approaching coarse precision.
+uint8 TIME_STATUS_COARSE = 100            # This time is valid to coarse precision.
+uint8 TIME_STATUS_COARSESTEERING = 120    # Time is coarse set, and is being steered.
+uint8 TIME_STATUS_FREEWHEELING = 130      # Position is lost, and the range bias cannot be calculated.
+uint8 TIME_STATUS_FINEADJUSTING = 140     # Time is adjusting to fine precision.
+uint8 TIME_STATUS_FINE = 160              # Time has fine precision.
+uint8 TIME_STATUS_FINESTEERING = 180      # Time is fine set and is being steered.
+uint8 TIME_STATUS_SATTIME = 200           # Time from satellite. This is only used in logs containing satellite data such as ephemeris and almanac.
+uint8 time_status
+
+# The week number since January 5th, 1980
+uint16 gps_week
+
+# Milliseconds into that week 
+uint32 gps_millisecs
+
+## Complete time log
+# GPS time = receiver time - offset
+# UTC time = GPS time + receiver_clock_offset + utc_offset
+
+# Clock model status (not including current measurement data)
+uint32 clock_status
+
+# Receiver clock offset, in seconds from GPS time
+float64 receiver_clock_offset
+
+# Receiver clock offset standard deviation
+float64 receiver_clock_offset_std
+
+# The offset of GPS time from UTC time, computed using almanac parametres
+float64 utc_offset
+
+# UTC year
+uint32 utc_year
+
+# UTC month (0-12), 0 = unknown
+uint8 utc_month
+
+# UTC day (0-31), 0 = unknown
+uint8 utc_day
+
+# UTC hour (0-23)
+uint8 utc_hour
+
+# UTC minute (0-59)
+uint8 utc_minute
+
+# UTC millisecond (0-60999), >59999 applies at leap second
+uint32 utc_millisecond
+
+# UTC status
+uint32 UTC_STATUS_INVALID = 0  # invalid
+uint32 UTC_STATUS_VALID = 1    # valid
+uint32 UTC_STATUS_WARNING = 2  # warning: Indicates that the leap seconds value is used as a default due to the lack of an almanac.
+uint32 utc_status
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+
+('Message type:', 'sensor_msgs/Imu')
+Message text:
+# This is a message to hold data from an IMU (Inertial Measurement Unit)
+#
+# Accelerations should be in m/s^2 (not in g's), and rotational velocity should be in rad/sec
+#
+# If the covariance of the measurement is known, it should be filled in (if all you know is the 
+# variance of each measurement, e.g. from the datasheet, just put those along the diagonal)
+# A covariance matrix of all zeros will be interpreted as "covariance unknown", and to use the
+# data a covariance will have to be assumed or gotten from some other source
+#
+# If you have no estimate for one of the data elements (e.g. your IMU doesn't produce an orientation 
+# estimate), please set element 0 of the associated covariance matrix to -1
+# If you are interpreting this message, please check for a value of -1 in the first element of each 
+# covariance matrix, and disregard the associated estimate.
+
+Header header
+
+geometry_msgs/Quaternion orientation
+float64[9] orientation_covariance # Row major about x, y, z axes
+
+geometry_msgs/Vector3 angular_velocity
+float64[9] angular_velocity_covariance # Row major about x, y, z axes
+
+geometry_msgs/Vector3 linear_acceleration
+float64[9] linear_acceleration_covariance # Row major x, y z 
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: geometry_msgs/Quaternion
+# This represents an orientation in free space in quaternion form.
+
+float64 x
+float64 y
+float64 z
+float64 w
+
+================================================================================
+MSG: geometry_msgs/Vector3
+# This represents a vector in free space. 
+# It is only meant to represent a direction. Therefore, it does not
+# make sense to apply a translation to it (e.g., when applying a 
+# generic rigid transformation to a Vector3, tf2 will only apply the
+# rotation). If you want your data to be translatable too, use the
+# geometry_msgs/Point message instead.
+
+float64 x
+float64 y
+float64 z
+
+
+('Message type:', 'visualization_msgs/MarkerArray')
+Message text:
+Marker[] markers
+
+================================================================================
+MSG: visualization_msgs/Marker
+# See http://www.ros.org/wiki/rviz/DisplayTypes/Marker and http://www.ros.org/wiki/rviz/Tutorials/Markers%3A%20Basic%20Shapes for more information on using this message with rviz
+
+uint8 ARROW=0
+uint8 CUBE=1
+uint8 SPHERE=2
+uint8 CYLINDER=3
+uint8 LINE_STRIP=4
+uint8 LINE_LIST=5
+uint8 CUBE_LIST=6
+uint8 SPHERE_LIST=7
+uint8 POINTS=8
+uint8 TEXT_VIEW_FACING=9
+uint8 MESH_RESOURCE=10
+uint8 TRIANGLE_LIST=11
+
+uint8 ADD=0
+uint8 MODIFY=0
+uint8 DELETE=2
+uint8 DELETEALL=3
+
+Header header                        # header for time/frame information
+string ns                            # Namespace to place this object in... used in conjunction with id to create a unique name for the object
+int32 id 		                         # object ID useful in conjunction with the namespace for manipulating and deleting the object later
+int32 type 		                       # Type of object
+int32 action 	                       # 0 add/modify an object, 1 (deprecated), 2 deletes an object, 3 deletes all objects
+geometry_msgs/Pose pose                 # Pose of the object
+geometry_msgs/Vector3 scale             # Scale of the object 1,1,1 means default (usually 1 meter square)
+std_msgs/ColorRGBA color             # Color [0.0-1.0]
+duration lifetime                    # How long the object should last before being automatically deleted.  0 means forever
+bool frame_locked                    # If this marker should be frame-locked, i.e. retransformed into its frame every timestep
+
+#Only used if the type specified has some use for them (eg. POINTS, LINE_STRIP, ...)
+geometry_msgs/Point[] points
+#Only used if the type specified has some use for them (eg. POINTS, LINE_STRIP, ...)
+#number of colors must either be 0 or equal to the number of points
+#NOTE: alpha is not yet used
+std_msgs/ColorRGBA[] colors
+
+# NOTE: only used for text markers
+string text
+
+# NOTE: only used for MESH_RESOURCE markers
+string mesh_resource
+bool mesh_use_embedded_materials
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: geometry_msgs/Pose
+# A representation of pose in free space, composed of position and orientation. 
+Point position
+Quaternion orientation
+
+================================================================================
+MSG: geometry_msgs/Point
+# This contains the position of a point in free space
+float64 x
+float64 y
+float64 z
+
+================================================================================
+MSG: geometry_msgs/Quaternion
+# This represents an orientation in free space in quaternion form.
+
+float64 x
+float64 y
+float64 z
+float64 w
+
+================================================================================
+MSG: geometry_msgs/Vector3
+# This represents a vector in free space. 
+# It is only meant to represent a direction. Therefore, it does not
+# make sense to apply a translation to it (e.g., when applying a 
+# generic rigid transformation to a Vector3, tf2 will only apply the
+# rotation). If you want your data to be translatable too, use the
+# geometry_msgs/Point message instead.
+
+float64 x
+float64 y
+float64 z
+================================================================================
+MSG: std_msgs/ColorRGBA
+float32 r
+float32 g
+float32 b
+float32 a
+
+
+('Message type:', 'novatel_msgs/InsFilteredState')
+Message text:
+### This is the ros msg of combined GPS states with different coordinates.
+
+## ROS message header
+Header header
+
+## Relevant Information from NovAtel Log Header
+
+# The week number since January 5th, 1980
+uint16 gps_week
+
+# Milliseconds into that week 
+uint32 gps_millisecs
+
+## WGS84 state
+Wgs84State wgs84
+
+## UTM state
+UtmState utm
+
+# INS status, originated from INSPVA log
+uint32 INS_STATUS_INACTIVE = 0                  # IMU logs are present, but the alignment routine has not started; INS is inactive.
+uint32 INS_STATUS_ALIGNING = 1                  # INS is in alignment mode.
+uint32 INS_STATUS_SOLUTION_NOT_GOOD = 2         # The INS solution is still being computed but the azimuth solution uncertainty has exceed 2 degrees. The solution is still valid but you should monitor the solution uncertainty in the INSCOV log. You may encounter this state during times when the GPS, used to aid the INS, is absent.
+uint32 INS_STATUS_SOLUTION_GOOD = 3             # The INS filter is in navigation mode and the INS solution is good.
+uint32 INS_STATUS_BAD_GPS_AGREEMENT = 6         # The INS filter is in navigation mode, and the GPS solution is suspected to be in error. This may be due to multipath or limited satellite visibility. The inertial filter has rejected the GPS position and is waiting for the solution quality to improve.
+uint32 INS_STATUS_ALIGNMENT_COMPLETE = 7        # The INS filter is in navigation mode, but not enough vehicle dynamics have been experienced for the system to be within specifications.
+uint32 INS_STATUS_DETERMINING_ORIENTATION = 8   # INS is determining the IMU axis aligned with gravity.
+uint32 INS_STATUS_WAITING_INITIALPOS = 9        # The INS filter has determined the IMU orientation and is awaiting an initial position estimate to begin the alignment process.
+uint32 ins_status
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: novatel_msgs/Wgs84State
+## WGS84 state
+
+# latitude - WGS84 (deg)
+float64 latitude
+
+# longitude - WGS84 (deg)
+float64 longitude
+
+# Ellipsoidal height - WGS84 (m)
+float64 height
+
+# velocity in a WGS84 true northerly direction (m/s)
+float64 north_velocity
+
+# velocity in an WGS84 true easterly direction (m/s)
+float64 east_velocity
+
+# velocity in an up direction
+float64 up_velocity
+
+# right handed rotation around y-axis (degrees)
+float64 roll
+
+# right handed rotation around x-axis (degrees)
+float64 pitch
+
+# right handed rotation around (down) z-axis (degrees), equals Left handed rotation around (up) z-axis Degrees clockwise from North
+float64 azimuth
+
+================================================================================
+MSG: novatel_msgs/UtmState
+# UTM state
+
+# easting - UTM (m)
+float64 easting
+
+# northing - UTM (m)
+float64 northing
+
+# Ellipsoidal height - WGS84 (m)
+float64 height
+
+# Velocity in UTM grid east direction, i.e. WGS84 east velocity corrected by grid convergence (m/s)
+float64 east_velocity
+
+# Velocity in UTM grid north direction, i.e. WGS84 north velocity corrected by grid convergence (m/s)
+float64 north_velocity
+
+# velocity in an up direction
+float64 up_velocity
+
+# right handed rotation around y-axis (degrees)
+float64 roll
+
+# right handed rotation around x-axis (degrees)
+float64 pitch
+
+# right handed rotation around (down) z-axis (degrees), equals Left handed rotation around (up) z-axis Degrees clockwise from UTM grid North, i.e. WGS84 azimuth corrected by UTM grid convergence
+float64 azimuth
+
+# UTM zone (1 to 60) from west to east, defining the base meridian
+uint8 zone 
+
+# Hemisphere, true = north, false = south
+bool northern_hemisphere 
+
+
+('Message type:', 'bob_perception_msgs/TrackedOrientedBoxArray')
+Message text:
+Header header
+TrackedOrientedBox[] tracks
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: bob_perception_msgs/TrackedOrientedBox
+uint64 object_id
+OrientedBox box
+
+================================================================================
+MSG: bob_perception_msgs/OrientedBox
+Header header
+float64 center_x      # Box center position x-coordinate.
+float64 center_y      # Box center position y-coordinate.
+float64 angle         # Orientation in rad.
+float64 length        # Box dimension 1, in direction of the orientation.
+float64 width         # Box dimension 2, orthogonal to dimension 1.
+float64 velocity_x    # Optional velocity vector x-coordinate.
+float64 velocity_y    # Optional velocity vector y-coordinate.
+
+
+('Message type:', 'bob_perception_msgs/TrackedLaserScan')
+Message text:
+Header header
+TrackedOrientedBox[] boxes           # Contains oriented bounding boxes.
+sensor_msgs/PointCloud2 point_cloud  # Contains a raw point cloud measurement
+                                     # with z=0 in header.frame_id (assuming
+                                     # 2D laser scan data).
+int32[] point_to_box                 # Contains for each point in the
+                                     # point_cloud an index to boxes.
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+================================================================================
+MSG: bob_perception_msgs/TrackedOrientedBox
+uint64 object_id
+OrientedBox box
+
+================================================================================
+MSG: bob_perception_msgs/OrientedBox
+Header header
+float64 center_x      # Box center position x-coordinate.
+float64 center_y      # Box center position y-coordinate.
+float64 angle         # Orientation in rad.
+float64 length        # Box dimension 1, in direction of the orientation.
+float64 width         # Box dimension 2, orthogonal to dimension 1.
+float64 velocity_x    # Optional velocity vector x-coordinate.
+float64 velocity_y    # Optional velocity vector y-coordinate.
+
+================================================================================
+MSG: sensor_msgs/PointCloud2
+# This message holds a collection of N-dimensional points, which may
+# contain additional information such as normals, intensity, etc. The
+# point data is stored as a binary blob, its layout described by the
+# contents of the "fields" array.
+
+# The point cloud data may be organized 2d (image-like) or 1d
+# (unordered). Point clouds organized as 2d images may be produced by
+# camera depth sensors such as stereo or time-of-flight.
+
+# Time of sensor data acquisition, and the coordinate frame ID (for 3d
+# points).
+Header header
+
+# 2D structure of the point cloud. If the cloud is unordered, height is
+# 1 and width is the length of the point cloud.
+uint32 height
+uint32 width
+
+# Describes the channels and their layout in the binary data blob.
+PointField[] fields
+
+bool    is_bigendian # Is this data bigendian?
+uint32  point_step   # Length of a point in bytes
+uint32  row_step     # Length of a row in bytes
+uint8[] data         # Actual point data, size is (row_step*height)
+
+bool is_dense        # True if there are no invalid points
+
+================================================================================
+MSG: sensor_msgs/PointField
+# This message holds the description of one point entry in the
+# PointCloud2 message format.
+uint8 INT8    = 1
+uint8 UINT8   = 2
+uint8 INT16   = 3
+uint8 UINT16  = 4
+uint8 INT32   = 5
+uint8 UINT32  = 6
+uint8 FLOAT32 = 7
+uint8 FLOAT64 = 8
+
+string name      # Name of field
+uint32 offset    # Offset from start of point struct
+uint8  datatype  # Datatype enumeration, see above
+uint32 count     # How many elements in the field
+
+
+('Message type:', 'sensor_msgs/LaserScan')
+Message text:
+# Single scan from a planar laser range-finder
+#
+# If you have another ranging device with different behavior (e.g. a sonar
+# array), please find or create a different message, since applications
+# will make fairly laser-specific assumptions about this data
+
+Header header            # timestamp in the header is the acquisition time of 
+                         # the first ray in the scan.
+                         #
+                         # in frame frame_id, angles are measured around 
+                         # the positive Z axis (counterclockwise, if Z is up)
+                         # with zero angle being forward along the x axis
+                         
+float32 angle_min        # start angle of the scan [rad]
+float32 angle_max        # end angle of the scan [rad]
+float32 angle_increment  # angular distance between measurements [rad]
+
+float32 time_increment   # time between measurements [seconds] - if your scanner
+                         # is moving, this will be used in interpolating position
+                         # of 3d points
+float32 scan_time        # time between scans [seconds]
+
+float32 range_min        # minimum range value [m]
+float32 range_max        # maximum range value [m]
+
+float32[] ranges         # range data [m] (Note: values < range_min or > range_max should be discarded)
+float32[] intensities    # intensity data [device-specific units].  If your
+                         # device does not provide intensities, please leave
+                         # the array empty.
+
+================================================================================
+MSG: std_msgs/Header
+# Standard metadata for higher-level stamped data types.
+# This is generally used to communicate timestamped data 
+# in a particular coordinate frame.
+# 
+# sequence ID: consecutively increasing ID 
+uint32 seq
+#Two-integer timestamp that is expressed as:
+# * stamp.sec: seconds (stamp_secs) since epoch (in Python the variable is called 'secs')
+# * stamp.nsec: nanoseconds since stamp_secs (in Python the variable is called 'nsecs')
+# time-handling sugar is provided by the client library
+time stamp
+#Frame this data is associated with
+# 0: no frame
+# 1: global frame
+string frame_id
+
+
+('Message type:', 'dynamic_reconfigure/Config')
+Message text:
+BoolParameter[] bools
+IntParameter[] ints
+StrParameter[] strs
+DoubleParameter[] doubles
+GroupState[] groups
+
+================================================================================
+MSG: dynamic_reconfigure/BoolParameter
+string name
+bool value
+
+================================================================================
+MSG: dynamic_reconfigure/IntParameter
+string name
+int32 value
+
+================================================================================
+MSG: dynamic_reconfigure/StrParameter
+string name
+string value
+
+================================================================================
+MSG: dynamic_reconfigure/DoubleParameter
+string name
+float64 value
+
+================================================================================
+MSG: dynamic_reconfigure/GroupState
+string name
+bool state
+int32 id
+int32 parent
+
+
