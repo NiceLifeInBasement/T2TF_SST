@@ -31,3 +31,5 @@ with the errors of other track segments.
 es gibt einige sehr ähnliche begriffe in versch papern, die verschiedenes aussagen:
     sensor-to-track fusion: asynchron sensor daten bspw durch einen kalman filter fusen
     sensor-to-sensor track fusion/sensor-to-system track: s.o., beides t2tf, aber das eine synchron das andere nicht(?)
+
+Ibeo Sensoren: üblich sind 3 vorn (left center right) und 2 hinten (left right)

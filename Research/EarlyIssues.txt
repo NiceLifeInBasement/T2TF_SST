@@ -1,0 +1,24 @@
+### Tracking Issues before Implementation of the first Algorithm
+### After the first-second day of working with the bag-data
+###
+### "Minor" in front of the issue number --> Minor question
+
+###-----------------
+
+#1:
+    T2TF requires multiple data sources,
+    currently we only have "/tracked_objects/scan" and data fields that are the same
+        (e.g. "/tracked_objects/v2x_fusion_scan")
+
+#1b:
+    What topics that are used in the bag are relevant for T2TF?
+
+#2:
+    Is a full list of msg definitions available somewhere, or do all msg def need to be extracted from the bag manually?
+
+Minor#3:
+    THIS IS POSSIBLY JUST A FORMATTING ISSUE (try utf-8 etc in python itself maybe)
+    THESE FIELDS MAY NOT BE RELEVANT AT ALL
+    Certain data fields can not be easily read by rqt_bag
+        "tracked_objects/v2x_fusion_scan.scan.point_cloud.data" for example (only has boxes etc)
+
