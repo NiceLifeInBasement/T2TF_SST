@@ -6,9 +6,21 @@ Most relevant data seems to be in topic /tracked_objects/scan
 
 
 think about what coordinate system you will use, or if this is basically predetermined by the way the data is given
-
+    and in general how relevant the coordinate system ends up being (can be really annoying to deal with)
 
 maybe start by using covariance intersection (CI) or FCI/I-FCI, try to get that running as a baseline
     since CI (variants) come with pretty clean formulas to implement
     and not a lot of data is needed for CI (see seeliger slides)
     from my current perspective this looks like the most promising algorithm for a baseline
+    dont try CI, go for FCI or I-FCI
+        if I-FCI is only changing the w approximation (as described in diss_seelinger:eq 4.16 (p.58) use that probably
+        since it should just be the overall better solution
+
+    but maybe FCI is enough as a baseline and is slightly easier to implement
+
+Issue: highly detailed data such as kalman gains from specific filters is not available, therefor certain algorithms
+can not be implemented at all
+
+https://scicomp.stackexchange.com/questions/22105/complexity-of-matrix-inversion-in-numpy
+    notes on matrix inversion speed, including when to use the inversion and when NOT to use the inversion
+    ("need to compute a product A−1b, you should instead solve the linear system Ax=b (e.g., using numpy.linalg.solve")

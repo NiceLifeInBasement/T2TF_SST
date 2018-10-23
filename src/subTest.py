@@ -7,8 +7,12 @@ import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import animation
+from test import logHelloWorld
 
+# Global Variable Definitions:
 uid = 194773  # set to 0 if you want to select a uid from the first data frame
+
+
 def callback(data):
     # data is the received data, in the format described by the msg file
     box_array = data.boxes  # extract the array of tracked obj boxes
@@ -46,23 +50,23 @@ def listener():
     # run simultaneously.
     rospy.init_node('listener', anonymous=True)
 
-
     # rospy.Subscriber("chatter", String, callback)
     # can use msg type "rospy.msg.AnyMsg" to subscribe to any topic you want, but the resulting data is useless
     #   since it is not deserialized
     # rospy.Subscriber("tracked_objects/scan", rospy.msg.AnyMsg, callback)
-    rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback)
+    rospy.Subscriber("tracked_objectsFabian/Baum/scan", TrackedLaserScan, callback)
 
     # spin() simply keeps python from exiting until this node is stopped
     # rospy.spin()
 
 
 if __name__ == '__main__':
-    listener()
+    logHelloWorld()
+    #listener()
 
     # The following is only necessary to plot the point data
     # Currently all painted dots are shown, this causes overlapping and cluttering of the graph
     global ax, fig
-    fig = plt.figure()
-    ax = plt.axes(xlim=(-10, 10), ylim=(-10, 10))
-    plt.show()
+    #fig = plt.figure()
+    #ax = plt.axes(xlim=(-10, 10), ylim=(-10, 10))
+    #plt.show()

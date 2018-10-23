@@ -1,5 +1,5 @@
 http://www.ftm.mw.tum.de/uploads/media/17_Seeliger.pdf
-	Link von Fabian/Baum
+	Link von Fabian
 	Präsentation zu "Fahrzeugübergreifende Informationsfusion"
 
 
@@ -7,7 +7,7 @@ https://oparu.uni-ulm.de/xmlui/bitstream/handle/123456789/4991/Diss_Seeliger.pdf
     "Fahrzeugübergreifende Informationsfusion für ein Kreuzungsassistenzsystem"
     Doktorarbeit zu T2TF, von der gleichen person wie der link von fabian
     enthält einiges an informationen, stellt detailliert einige algorithmen da usw
-
+    "Diss_Seelinger"
 
 https://ieeexplore.ieee.org/document/4648063
     "A comparison of track-to-track fusion algorithms for automotive sensor fusion"
@@ -38,5 +38,27 @@ https://pdfs.semanticscholar.org/596c/66c3d6e547a54f2e71092f72b5fd4019cdd8.pdf
     Evaluating Hierarchical Track Fusion with Information Matrix Filter
 
 
+https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=1591849
+    "Improved Fast Covariance Intersection for distributed data fusion"
+    stellt I-FCI vor
+    beinhaltet einen vergleich von allerlei algorithmen wie CI und varianten
+
+
+https://www.researchgate.net/publication/252557114_A_No-Loss_Covariance_Intersection_Algorithm_for_Track-to-Track_Fusion
+and
+http://spie.org/Publications/Proceedings/Paper/10.1117/12.849049
+    "A no-loss covariance intersection algorithm for track-to-track fusion"
+    Paper that presents SaCI - Sampling Covariance Intersection
+    4.1.6 in Diss_Selinger beschreibt diesen Algorithmus auch (p. 61ff)
+        -> wenn SaCI implementiert werden soll, dann könnten die dort angegeben Formeln ausreichen (recht detailliert)
+
+
+https://hal.inria.fr/hal-00848058/document
+    "Track-to-Track Fusion Using Split Covariance Intersection Filter-Information Matrix Filter (SCIF-IMF) for Vehicle
+    Surrounding Environment Perception"
+    neuer algorithmus (SCIF-IMF)
+    noch nicht detailliert angeschaut, nach seelinger benötigen diese Algorithmen aber zusatzinformationen
+    nicht sicher ob diese informationen verfügbar sind
+    allgemein ist der algorithmus zwar eine weitere mglk, gibt aber keine  grund ihn zu prioritisieren.
 
 

@@ -33,3 +33,5 @@ es gibt einige sehr ähnliche begriffe in versch papern, die verschiedenes aussa
     sensor-to-sensor track fusion/sensor-to-system track: s.o., beides t2tf, aber das eine synchron das andere nicht(?)
 
 Ibeo Sensoren: üblich sind 3 vorn (left center right) und 2 hinten (left right)
+
+cov mat (P) zeigen eine unsicherheit auf --> Information matrix I = P^(-1) zeigt stattdessen estimation certainty

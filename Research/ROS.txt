@@ -13,6 +13,11 @@ python files need to start with "#!/usr/bin/env python"
     no spaces allowed, no comments before that
     keyword "shebang line"
 
+to get pycharm to recognize the ros packages, do:
+    "source ~/catkin_ws/devel/setup.bash"
+    "./[...]/pycharm.sh"
+    i.e. start pycharm after sourcing setup.bash in the same terminal
+
 ---
 Importing messages from another package
     Make sure you always "source ./devel/setup.bash"

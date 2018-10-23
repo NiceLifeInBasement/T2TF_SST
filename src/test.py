@@ -15,6 +15,14 @@ def talker():
         rate.sleep()
 
 
+def logHelloWorld():
+    # Implementing this for testing purposes:
+    #   - Test if ros/this node is running and working
+    #   - Test connection to other nodes (importing this function etc)
+    rospy.loginfo("Hello World - by test.py - using loginfo")
+    print("Hello World - by test.py - using print")
+
+
 if __name__ == '__main__':
     try:
         talker()
