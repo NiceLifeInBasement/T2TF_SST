@@ -2,3 +2,5 @@ https://stats.stackexchange.com/questions/49901/intuitive-understanding-covarian
     intuitive explanation of covariance, correlation, auto-correlation, cross correlation, auto-covariance, cross-cov
 
 
+http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.476.5164&rep=rep1&type=pdf
+    enthält allerlei info re:motion models

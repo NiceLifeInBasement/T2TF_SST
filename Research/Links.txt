@@ -1,7 +1,7 @@
 http://www.ftm.mw.tum.de/uploads/media/17_Seeliger.pdf
 	Link von Fabian
 	Präsentation zu "Fahrzeugübergreifende Informationsfusion"
-
+    slide 24 hat alle relavanten formeln für CI/FCI/I-FCI
 
 https://oparu.uni-ulm.de/xmlui/bitstream/handle/123456789/4991/Diss_Seeliger.pdf?sequence=1&isAllowed=y
     "Fahrzeugübergreifende Informationsfusion für ein Kreuzungsassistenzsystem"
@@ -60,5 +60,19 @@ https://hal.inria.fr/hal-00848058/document
     noch nicht detailliert angeschaut, nach seelinger benötigen diese Algorithmen aber zusatzinformationen
     nicht sicher ob diese informationen verfügbar sind
     allgemein ist der algorithmus zwar eine weitere mglk, gibt aber keine  grund ihn zu prioritisieren.
+
+
+https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=6958011
+    "Inter-vehicle information-fusion with shared perception information"
+    beinhaltet einen vergleich von I-FCI, IT-FCI, SaCI (I-FCI wird am ende als "best choice" bezeichnet)
+
+
+http://faculty.missouri.edu/uhlmannj/Dissertation-pref.pdf
+    [Nur das intro einer dissertation, unter diesem namen mehr suchen wenn nötig]
+    "dynamic map building and localization"
+    laut https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=4648063 ("comp of t2t algo") ist CI die beste
+    schätzung wenn die cross-covariance unbekannt ist, das wird in diesem paper gezeigt
+    [paper selbst nicht zwangsweise relevant, nur der eine satz wann CI optimal ist ist interessant, stammt aber aus
+    einem anderen paper]
 
 

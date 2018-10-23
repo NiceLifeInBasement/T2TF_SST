@@ -17,9 +17,15 @@ maybe start by using covariance intersection (CI) or FCI/I-FCI, try to get that 
         since it should just be the overall better solution
 
     but maybe FCI is enough as a baseline and is slightly easier to implement
+    put the w calc into its own formula, pass an argument (or set some flag or something) to differentiate between
+    CI/FCI/I-FCI/other ways of determining the w value, since that is the main difference between the variants
 
-Issue: highly detailed data such as kalman gains from specific filters is not available, therefor certain algorithms
-can not be implemented at all
+Issue: highly detailed data such as kalman gains from specific filters is not available, therefore certain algorithms
+can not be implemented at all.
+    " Die Methoden [ohne Zusatzinformation] werden in dieser Arbeit der Vollständigkeit halber vorgestellt,
+    da mit den Methoden ohne Zusatzinformation nur ein geringer, z.T. auch prinzipbedingt gar kein
+    Informationsgewinn realisiert werden kann" (src: Diss_Seelinger, p53, intro to section 4)
+    --> Problem.
 
 https://scicomp.stackexchange.com/questions/22105/complexity-of-matrix-inversion-in-numpy
     notes on matrix inversion speed, including when to use the inversion and when NOT to use the inversion

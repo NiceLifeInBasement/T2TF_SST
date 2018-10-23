@@ -3,6 +3,8 @@
 ###
 ### "Minor" in front of the issue number --> Minor question
 
+# Summed up in the mail "Fragen bzgl rosbag daten"
+
 ###-----------------
 
 #1:
@@ -21,4 +23,7 @@ Minor#3:
     THESE FIELDS MAY NOT BE RELEVANT AT ALL
     Certain data fields can not be easily read by rqt_bag
         "tracked_objects/v2x_fusion_scan.scan.point_cloud.data" for example (only has boxes etc)
+
+#4:
+    Covariance of tracking result?
 

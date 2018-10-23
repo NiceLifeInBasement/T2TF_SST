@@ -54,7 +54,7 @@ def listener():
     # can use msg type "rospy.msg.AnyMsg" to subscribe to any topic you want, but the resulting data is useless
     #   since it is not deserialized
     # rospy.Subscriber("tracked_objects/scan", rospy.msg.AnyMsg, callback)
-    rospy.Subscriber("tracked_objectsFabian/Baum/scan", TrackedLaserScan, callback)
+    rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback)
 
     # spin() simply keeps python from exiting until this node is stopped
     # rospy.spin()
