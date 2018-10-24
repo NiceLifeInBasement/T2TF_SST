@@ -76,3 +76,45 @@ http://faculty.missouri.edu/uhlmannj/Dissertation-pref.pdf
     einem anderen paper]
 
 
+http://solmaz.eng.uci.edu/Papers/Files/J10-MZ-SSK-2017.pdf
+    "A Track-to-Track Fusion Method via Construction of Cross-Covariance Matrix for Tracks with Unknown Correlations"
+    unknown correlations not unknown covariance
+    probably not 100% relevant
+
+
+https://pdfs.semanticscholar.org/2dc5/d3968ce6dedebbc2e6855570d178a396917c.pdf
+    "Covariance Reconstruction for Track Fusion with Legacy Track Sources"
+    "legacy trackers may only provide the local track estimates to the fusion center without any covariance information"
+    keyword: covariance reconstruction
+    works better if the source provides a RMS position error
+
+
+http://fusion.isif.org/proceedings/fusion09CD/data/papers/0100.pdf?
+    "Exact Algorithms for Four Track-to-Track Fusion Configurations"
+
+
+http://fusion.isif.org/proceedings/Fusion_2011/data/papers/176.pdf
+    "Heterogeneous Track-to-Track Fusion"
+    different sensors fused together, could be interesting since one of the sensors here will be a black box
+    (therefore homogeneous t2tf is unlikely to be possible. However maybe you can also completely ignore this and just
+    use CI for the data anyway (with the lack of covariance remaining the top problem)
+
+
+http://www.wseas.us/e-library/transactions/systems/2008/30-387N.pdf
+    "Track Fusion with Incomplete Covariance Information"
+    enthält überblick über einige T2TF algorithmen
+    schlägt vor, im fall "without any information": mittelwert bilden...
+    teil allgemein in verschiedene fälle auf die alle verschieden viel informationen beinhalten
+
+
+https://ieeexplore.ieee.org/document/7485200
+    "Track fusion with incomplete information for automotive smart sensor systems"
+    presents a decorrelation procedure for sensors with incomplete information (which is exactly what this is)
+    approach here is to de-correlated information to be able to use a kalman filter on the data
+
+https://ieeexplore.ieee.org/document/7313517
+    "Influence of the Sensor Local Track Covariance on the Track-to-Track Sensor Fusion"
+    "covariance compensation and a covariance reconstarcution procedure that takes into account different sensor
+    physical and its local tracker specific properties into account"
+    gut geschrieben, gute informationen, teil auf in "full/partial/no info"
+    TODO zuende lesen

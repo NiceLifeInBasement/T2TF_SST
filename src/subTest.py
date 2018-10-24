@@ -10,7 +10,7 @@ from matplotlib import animation
 from test import logHelloWorld
 
 # Global Variable Definitions:
-uid = 194773  # set to 0 if you want to select a uid from the first data frame
+uid = 48  # set to 0 if you want to select a uid from the first data frame
 
 
 def callback(data):
@@ -61,12 +61,11 @@ def listener():
 
 
 if __name__ == '__main__':
-    logHelloWorld()
-    #listener()
+    listener()
 
     # The following is only necessary to plot the point data
     # Currently all painted dots are shown, this causes overlapping and cluttering of the graph
     global ax, fig
-    #fig = plt.figure()
-    #ax = plt.axes(xlim=(-10, 10), ylim=(-10, 10))
-    #plt.show()
+    fig = plt.figure()
+    ax = plt.axes(xlim=(-10, 10), ylim=(-10, 10))
+    plt.show()

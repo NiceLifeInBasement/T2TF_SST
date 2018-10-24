@@ -20,6 +20,8 @@ maybe start by using covariance intersection (CI) or FCI/I-FCI, try to get that 
     put the w calc into its own formula, pass an argument (or set some flag or something) to differentiate between
     CI/FCI/I-FCI/other ways of determining the w value, since that is the main difference between the variants
 
+    CI also has the advantage of not needing correlation information
+
 Issue: highly detailed data such as kalman gains from specific filters is not available, therefore certain algorithms
 can not be implemented at all.
     " Die Methoden [ohne Zusatzinformation] werden in dieser Arbeit der Vollständigkeit halber vorgestellt,
@@ -30,3 +32,16 @@ can not be implemented at all.
 https://scicomp.stackexchange.com/questions/22105/complexity-of-matrix-inversion-in-numpy
     notes on matrix inversion speed, including when to use the inversion and when NOT to use the inversion
     ("need to compute a product A−1b, you should instead solve the linear system Ax=b (e.g., using numpy.linalg.solve")
+
+most likely need to find a way to implement covariance reconstruction
+
+check how you will need to do track association: are all objects id'ed? are the ids of different sensors already the
+same? check how good the tracking of each sensor is: does the sensor lose the track (in that case, even if all sensors
+provide uids, you would need to periodically check the matching between uids of different sensors)
+
+
+One intuitive approach is to use Kalman filter (KF) directly on the (temporarily autocorrelated) estimates from the
+smart sensor systems; however, this is statistically forbidden due to violation of input independence assumption
+(i.e., measurement whiteness) in KF estimation recursions
+    --https://ieeexplore.ieee.org/document/7485200
+    -->DON'T SIMPLY USE A KALMAN FILTER
