@@ -1,0 +1,5 @@
+Get graphics to work
+Maybe instead of trying to log along as you receive data, receive data first and animate it later?
+    Seems pretty weird though, would have to wait for data gen everytime
+
+After that, consider algorithms to establish better tracking results without changing uid on tracked objects

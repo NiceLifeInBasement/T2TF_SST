@@ -34,6 +34,9 @@ https://scicomp.stackexchange.com/questions/22105/complexity-of-matrix-inversion
     ("need to compute a product A−1b, you should instead solve the linear system Ax=b (e.g., using numpy.linalg.solve")
 
 most likely need to find a way to implement covariance reconstruction
+    for the v2x data for sure
+    for the other data, if you reduce the states you want to estimate to position and velocity (i.e. remove angle and the
+    length/width data) you have a full cov. matrix
 
 check how you will need to do track association: are all objects id'ed? are the ids of different sensors already the
 same? check how good the tracking of each sensor is: does the sensor lose the track (in that case, even if all sensors
