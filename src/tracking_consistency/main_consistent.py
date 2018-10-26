@@ -32,8 +32,8 @@ def callback_org_data(data):
         uid.append(obj_id)
 
     # Update the plot with the list of points from this plot
-    colors = np.repeat(['r', 'b', 'g'], len(uid))  # Testing colors
-    visuals.plot_points(x_pos, y_pos, uid, colors)
+    colors = np.tile(['b', 'r', 'g', 'y'], len(uid))  # Testing colors
+    visuals.plot_points(x_pos, y_pos, uid)
 
 
 def listen_original_data():
@@ -46,5 +46,5 @@ def listen_original_data():
 
 
 if __name__ == '__main__':
-    visuals = TrackVisuals(limit=50, neg_limit=-50, color='b')  # Create a new Visualization object
+    visuals = TrackVisuals(limit=40, neg_limit=-20, color='b')  # Create a new Visualization object
     listen_original_data()
