@@ -43,7 +43,7 @@ class TrackVisuals:
         self.limit = limit
         self.neg_limit = neg_limit
         self.fig = plt.figure()
-        self.ids = set()
+        self.ids = []
         self.ax = plt.axes(xlim=(self.neg_limit, self.limit), ylim=(self.neg_limit, self.limit))
         self.x, self.y = [], []
         self.def_color = color
@@ -51,7 +51,7 @@ class TrackVisuals:
         self.sc = self.ax.scatter(self.x, self.y, c=color)
         self.default_annotation()
 
-    def plot_points(self, x_new, y_new, uid, color=[]):
+    def plot_points(self, x_new, y_new, uid, color=[], append=False):
         """
         Plots tracking data in the graph, marking it with annotations of the corresponding UID.
         This resets all previously plotted data, use add_point if you want to add a single point.
@@ -60,10 +60,15 @@ class TrackVisuals:
         A color array can be specified, in this array every point gets assigned its color. If this is not specified or
         "[]" is passed, the default color that was specified during init will be used for all points. This does not
         affect annotation color.
+        The append parameter allows you to specify whether you want to overwrite all currently drawn points. Appending
+        points can be useful to plot data from different sources in the same plot. If the new color map is empty, the
+        entire colormap will be reset as well.
         :param x_new: The x position of the point as an array
         :param y_new: The y position of the point as an array
         :param uid: The numerical identifier of the point (which will be used as a label aswell)
         :param color: The colormap for this set. If not specified or "[]", the default color will be used for all points
+        :param append: If True, the old points will not be deleted. If False, only the newly passed points will be shown
+                        Make sure to either use the color argument at all or at no times.
         """
         # The arrays are all cut down to the size of the smallest one that was passed
         # This always includes a check whether or not color was passed as an argument
@@ -71,14 +76,23 @@ class TrackVisuals:
             min_length = min([len(x_new), len(y_new), len(uid), len(color)])
         else:
             min_length = min([len(x_new), len(y_new), len(uid)])
-        self.x = x_new[0:min_length]  # Expand list of points by the next point
-        self.y = y_new[0:min_length]  # as above
-        self.ids = uid[0:min_length]
-        # Cut colors down in size if colors were specified
-        if len(color) > 0:
-            self.colormap = color[0:min_length]
+        if append:
+            self.x.extend(x_new[0:min_length])
+            self.y.extend(y_new[0:min_length])
+            self.ids.extend(uid[0:min_length])
+            if len(color) > 0:
+                self.colormap.extend(color[0:min_length])
+            else:
+                self.colormap = []  # No colors were specified
         else:
-            self.colormap = []  # No colors were specified
+            self.x = x_new[0:min_length]  # Expand list of points by the next point
+            self.y = y_new[0:min_length]  # as above
+            self.ids = uid[0:min_length]
+            # Cut colors down in size if colors were specified
+            if len(color) > 0:
+                self.colormap = color[0:min_length]
+            else:
+                self.colormap = []  # No colors were specified
 
         # Remove annotations
         for i, a in enumerate(self.ann_list):
