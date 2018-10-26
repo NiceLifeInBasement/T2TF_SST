@@ -63,12 +63,14 @@ class TrackVisuals:
         The append parameter allows you to specify whether you want to overwrite all currently drawn points. Appending
         points can be useful to plot data from different sources in the same plot. If the new color map is empty, the
         entire colormap will be reset as well.
+        If you have multiple data sources, one should be set to append=False and the rest to append=True. Then, one will
+        periodically wipe all data, and the others will add new information afterwards. Appending data without
+        synchronized sources is not recommended due to this.
         :param x_new: The x position of the point as an array
         :param y_new: The y position of the point as an array
         :param uid: The numerical identifier of the point (which will be used as a label aswell)
         :param color: The colormap for this set. If not specified or "[]", the default color will be used for all points
         :param append: If True, the old points will not be deleted. If False, only the newly passed points will be shown
-                        Make sure to either use the color argument at all or at no times.
         """
         # The arrays are all cut down to the size of the smallest one that was passed
         # This always includes a check whether or not color was passed as an argument
