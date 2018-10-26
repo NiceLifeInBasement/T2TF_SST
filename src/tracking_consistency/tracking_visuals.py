@@ -9,7 +9,7 @@ import matplotlib.animation as plt_animation
 import matplotlib.pyplot as plt
 
 
-class VisualLaser:
+class TrackVisuals:
     """
     Class that stores relevant information regarding the visuals and has all methods to plot further data etc
     """
@@ -28,7 +28,6 @@ class VisualLaser:
         self.ax = plt.axes(xlim=(neg_limit, limit), ylim=(neg_limit, limit))
         self.x, self.y = [], []
         self.sc = self.ax.scatter(self.x, self.y, c='r')
-        plt.ion()
 
     def plot_point(self, x_new, y_new, uid):
         """
@@ -42,14 +41,15 @@ class VisualLaser:
         #   Basic idea: hold all point-pairs in the x/y arrays, update them via the plot function and periodically
         #   redraw the plot
 
-        # self.ax.plot(x, y, 'ro')  # Outdated, remove once the new way works
         # print("Internal Visual at: "+str(x)+"|"+str(y))  # DEBUG
-        # print("Extending by 1")  # DEBUG
         self.x.append(x_new)  # Expand list of points by the next point
         self.y.append(y_new)  # see above
         self.sc.set_offsets(np.c_[self.x, self.y])
         plt.pause(0.00001)
-        # self.sc = self.ax.scatter(self.x, self.y)
+
+    def add_point(self, x_new, y_new):
+        self.x.append(x_new)  # Expand list of points by the next point
+        self.y.append(y_new)  # see above
 
     def animate(self, i):
         # TODO if you append values to x/y here, they get plotted correctly
@@ -62,9 +62,6 @@ class VisualLaser:
     def ani_fig(self):
         ani = plt_animation.FuncAnimation(self.fig, self.animate, interval=100, repeat=True)
         return ani
-
-    def show_fig(self):
-        plt.show()
 
     def clear_plot(self):
         self.ax.clear()

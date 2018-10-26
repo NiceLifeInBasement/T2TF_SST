@@ -6,14 +6,17 @@ Main file for testing the algorithms for creating consistent data from the Track
 import numpy as np
 import rospy
 from bob_perception_msgs.msg import *
-from laser_visuals import *
-
+from tracking_visuals import *
+import matplotlib.pyplot as plt
 
 visuals = None
 
+x = []
+y = []
+
 
 def callback_org_data(data):
-    global visuals
+    global visuals, x, y, sc
     # visuals.clear_plot()
     box_array = data.boxes
     for tracked_box in box_array:
@@ -21,17 +24,18 @@ def callback_org_data(data):
         oriented_box = tracked_box.box
         x_pos = oriented_box.center_x
         y_pos = oriented_box.center_y
-        visuals.plot_point(x_pos, y_pos, obj_id)
-
+        visuals.plot_point(x_pos, y_pos, 0)
 
 def listen_original_data():
     rospy.init_node('listener_laser_scan', anonymous=True)
 
     rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback_org_data)
 
-    rospy.spin()
+    # DONT NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
+    plt.show()
 
 
 if __name__ == '__main__':
-    visuals = VisualLaser()
+    visuals = TrackVisuals()
+    print("Listening to org data")
     listen_original_data()

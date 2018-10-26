@@ -25,3 +25,9 @@ Importing messages from another package
         add_message_files(...)
         generate_messages(...)
     Also make sure CMakeLists has message_generation, message_runtime listed under find_package()
+
+
+Auto updating ros graph:
+    dont need spin if you have a blocking tkinter window
+        (if you spin, it will crash because tkinter cant deal with multithreading)
+    set up the plot, call the "listener"
