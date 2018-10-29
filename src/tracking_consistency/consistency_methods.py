@@ -5,35 +5,35 @@ Includes different methods for creating consistent tracking of the cars
 """
 import numpy as np
 import rospy
-
-
-def dist(p1, p2):
-    """
-    Takes two points as tuples (x,y) and returns the euclidean distance between the two points.
-    :param p1: The first point as a tuple (x,y)
-    :param p2: The first point as a tuple (x,y)
-    :return: The distance between the two points
-    """
-    distance = np.linalg.norm(p1 - p2)
-    return distance
+from similarity import *
 
 
 class ConsistencyTracker:
     """
     The ConsistencyTracker class can be used to improve consistency in a tracker.
+    During init, this needs to be passed a function that can be used to evaluate similarity between two objects in the
+    format of the methods of similarity.SimilarityChecker.sim_<...> Additionally, a threshold for this needs to be
+    given, that will be used to compare these values to.
     Has a working mode that determines how output is performed:
         plot: Plot the data. Requires to pass a TrackVisuals argument.
         publish: NOT YET IMPLEMENTED Publish the data to a python topic
         return: Only returns the data without doing anything special with it
     """
+    sim_function = None
+    sim_threshold = 0
     old_data = None  # The data from the previous time step
     mode = ""
     visuals = None  # If mode=="plot" this should be a TrackVisuals Object used for visualization of the data
-    phi = 0.1  # Multiplicative parameter for maximum distance calculation
+    phi = 1  # Multiplicative parameter for maximum distance calculation
     plot_color = 'b'
     append_data = True
 
-    def __init__(self, working_mode="plot", radius_mult_constant=0.1, vis=None, plot_col='b', append=True):
+    def __init__(self, sim_function, threshold, working_mode="plot", radius_mult_constant=0.01, vis=None, plot_col='b', append=True):
+        # Set the args
+        self.sim_function = sim_function
+        self.sim_threshold = threshold
+
+        # Set the kwargs
         self.plot_color = plot_col
         self.mode = working_mode  # Store the working mode
         self.append_data = append
@@ -43,7 +43,7 @@ class ConsistencyTracker:
 
     def callback_consistency(self, data):
         """
-        Callback method that subscribers can use to generate new data from this class. Will use the circle based
+        Callback method that subscribers can use to generate new data from this class. Will use the set similarity based
         consistency detection algorithm, and generate output according to the working_mode that was previously set.
         :param data: The data that was received from the topic in this time step
         :return: The newly generated data
@@ -66,11 +66,6 @@ class ConsistencyTracker:
         #       IF d < max_dist:
         #           obj_now.id = old_id
         # -------------------------------------------
-
-        # Use the following to calculate velocity (since you only have x+y given)
-        #   vel_x = np.abs(oriented_box.velocity_x)
-        #   vel_y = np.abs(oriented_box.velocity_y)
-        #   full_velocity = np.sqrt(vel_x**2 + vel_y**2)  # TODO check for correctness, currently just doing pythagoras
 
         # [... Code goes here ...]
 
