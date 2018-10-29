@@ -9,13 +9,15 @@ from bob_perception_msgs.msg import *
 from tracking_visuals import *
 import matplotlib.pyplot as plt
 from consistency_methods import *
+from similarity import *
 
 visuals = None  # TrackVisuals Object to be used for plotting data
+sim_checker = None  # SimilarityChecker Object to be used for comparing objects
 
 
 def callback_org_data(data):
     # Plot data that was produced by the original Laser Scans
-    global visuals
+    global visuals, sim_checker
     box_array = data.boxes
     # Clear lists of points
     ConsistencyTracker.plot_data(box_array, visuals, 'r', False)
@@ -39,4 +41,5 @@ def listener():
 
 if __name__ == '__main__':
     visuals = TrackVisuals(limit=40, neg_limit=-20, color='b')  # Create a new Visualization object
+    sim_checker = SimilarityChecker(dist_mult=0.001)
     listener()
