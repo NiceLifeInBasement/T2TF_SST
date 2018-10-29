@@ -119,7 +119,7 @@ class ConsistencyTracker:
         # Now, perform output as necessary
 
         if "plot" in self.mode:
-            self.plot_data(data.boxes, self.visuals, self.plot_color, self.append_data)
+            self.plot_id_data(data.boxes, self.visuals, self.plot_color, self.append_data)
         elif "publish" in self.mode:
             print("Publishing is currently not supported")
         elif "return" in self.mode:
@@ -156,6 +156,35 @@ class ConsistencyTracker:
         # Turn color into an array of adequate length. Cut the length, in case someone passed multiple colors:
         color_array = np.tile(color, len(x_pos))[0:len(x_pos)]
         # Update the plot with the list of points from this plot
+        vis.plot_points(x_pos, y_pos, uid, color_array, append)
+
+    def plot_id_data(self, data, vis, color='b', append=False):
+        # TODO turn this into an actual commented method
+
+        # Quick fix: plot data that also checks the list of changed ids
+        x_pos = []
+        y_pos = []
+        uid = []
+        for tracked_box in data:
+            # Extract relevant information from every box (id, position)
+            obj_id = tracked_box.object_id
+            oriented_box = tracked_box.box
+            # Append this information to the list of points for this step
+            x_pos.append(oriented_box.center_x)
+            y_pos.append(oriented_box.center_y)
+            uid.append(obj_id)
+
+        # Turn color into an array of adequate length. Cut the length, in case someone passed multiple colors:
+        color_array = np.tile(color, len(x_pos))[0:len(x_pos)]
+        # Update the plot with the list of points from this plot
+
+        # ---
+        # Go over list of changed uids and change the color to 'y'
+        for oid in self.id_map.correct:
+            if oid in uid:
+                index = uid.index(oid)
+                color_array[index] = 'y'
+
         vis.plot_points(x_pos, y_pos, uid, color_array, append)
 
 

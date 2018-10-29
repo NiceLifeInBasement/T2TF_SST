@@ -38,14 +38,41 @@ class SimilarityChecker:
     time steps they were apart (0=same time step)
     """
     # List of Hyperparameters that will be used across the functions:
-    # TODO find decent default values for all important ones
+    # TODO find decent default values for all important onesTrue
     dist_mult = 0.01  # How much velocity is weighted in the position comparison
+    velo_add = 1  # A flat value added to all velocity values
 
-    def __init__(self, dist_mult=0.01):
+    def __init__(self, dist_mult=0.01, velo_add=1):
         self.dist_mult = dist_mult
+        self.velo_add = velo_add
 
     def sim_position(self, old_obj, new_obj, time_diff):
         """
+        TODO description
+        doesnt take into account velocity
+        :param old_obj:
+        :param new_obj:
+        :param time_diff:
+        :return:
+        """
+        phi = self.dist_mult
+        gamma = self.velo_add
+
+        max_dist = time_diff * phi * gamma
+
+        # Calculate the euclidean distance between the two points
+        p1 = (old_obj.center_x, old_obj.center_y)
+        p2 = (new_obj.center_x, new_obj.center_y)
+        pt_dist = dist(p1, p2)
+
+        if pt_dist <= max_dist:
+            return 0
+        else:
+            return pt_dist - max_dist
+
+    def sim_velocity(self, old_obj, new_obj, time_diff):
+        """
+        ISSUE: LOTS OF VALUES HAVE 0 VELOCITY; BUT NOT ALL
         Compares two objects in OrientedBox format based on the positions. This takes into account velocity based on
         the following hyperparameter:
         - dist_mult: Multiplicative with velocity and time_diff to describe change in position
@@ -59,9 +86,10 @@ class SimilarityChecker:
         :return: A Float describing the similarity between the two objects as a function of difference (0 for the same)
         """
         phi = self.dist_mult
+        gamma = self.velo_add
         # Calculate "full" velocity using pythagoras (since you only have x+y given)
-        vel_x = np.abs(old_obj.velocity_x)
-        vel_y = np.abs(old_obj.velocity_y)
+        vel_x = np.abs(old_obj.velocity_x) + gamma
+        vel_y = np.abs(old_obj.velocity_y) + gamma
         vel_full = np.sqrt(vel_x**2 + vel_y**2)
         # Calculate the euclidean distance between the two points
         p1 = (old_obj.center_x, old_obj.center_y)
@@ -71,11 +99,15 @@ class SimilarityChecker:
         # Establish the "circle" size, i.e. the maximum distance that the two points can be apart to return a similarity
         # value of 0
         max_dist = time_diff * phi * vel_full
-
+        FILE = "src/T2TF_SST/data/test.txt"  # name of the file to print similarity values to
         if pt_dist <= max_dist:
             # The two objects were in acceptable distance to each other (based on velocity)
+            with open(FILE, "a") as myfile:
+                myfile.write("0"+"\n")
             return 0
         else:
             # The two objects were too far from each other, return the distance from the second one to the circle around
             # the first one
+            with open(FILE, "a") as myfile:
+                myfile.write(str(pt_dist - max_dist)+"\n")
             return pt_dist - max_dist

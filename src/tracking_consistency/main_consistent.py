@@ -42,5 +42,5 @@ def listener():
 
 if __name__ == '__main__':
     visuals = TrackVisuals(limit=40, neg_limit=-20, color='b')  # Create a new Visualization object
-    sim_checker = SimilarityChecker(dist_mult=100000)
+    sim_checker = SimilarityChecker(dist_mult=0.5, velo_add=0.5)
     listener()
