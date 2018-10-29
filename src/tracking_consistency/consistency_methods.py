@@ -3,14 +3,11 @@
 Includes different methods for creating consistent tracking of the cars
 
 """
-import numpy as np
-import rospy
-from similarity import *
 from t2t_utils import *
 import copy
 
 
-# TODO asssuming that data is coming in the TrackedLaserScan format
+# TODO assuming that data is coming in the TrackedLaserScan format
 class ConsistencyTracker:
     """
     The ConsistencyTracker class can be used to improve consistency in a tracker.
@@ -36,7 +33,7 @@ class ConsistencyTracker:
     ttl = 0  # How many time steps an id and its information is stored after getting lost
     id_map = None
 
-    def __init__(self, sim_function, threshold, ttl=4, working_mode="plot", radius_mult_constant=0.01, vis=None,
+    def __init__(self, sim_function, threshold, ttl=4, working_mode="plot", vis=None,
                  plot_col='b', append=True):
         # Set the args
         self.sim_function = sim_function
@@ -47,7 +44,6 @@ class ConsistencyTracker:
         self.plot_color = plot_col
         self.mode = working_mode  # Store the working mode
         self.append_data = append
-        self.phi = radius_mult_constant  # Set phi to the given constant value
         self.old_data = None
         self.visuals = vis
 
@@ -91,8 +87,8 @@ class ConsistencyTracker:
         box_array = self.old_data.boxes
         for next_id in diff_id_set:
             for b in box_array:
-                if next_id == b.unique_id:
-                    next_box = b
+                if next_id == b.object_id:
+                    next_box = b.box
             self.lost_ids.add(next_id, next_box)
 
         # 2. increment the time on all of the ids (do this now, so that no 0s are stored that would imply the same step)
@@ -115,9 +111,9 @@ class ConsistencyTracker:
                     # According to the similarity function, this object got its id changed
                     # TODO add something here that lets you later display this object in a different color (use id_map?)
                     # store this id in the mapping of wrong->correct ids for later use
-                    self.id_map.add(data.boxes[i].unique_id, next_id)
+                    self.id_map.add(data.boxes[i].object_id, next_id)
                     # Correct this id
-                    data.boxes[i].unique_id = next_id
+                    data.boxes[i].object_id = next_id
 
         # ---
         # Now, perform output as necessary
@@ -162,8 +158,6 @@ class ConsistencyTracker:
         # Update the plot with the list of points from this plot
         vis.plot_points(x_pos, y_pos, uid, color_array, append)
 
-    # TODO create callback_publish which publishes the data instead of plotting it or add in a "mode"
-
 
 class IDTracker:
     """
@@ -189,12 +183,28 @@ class IDTracker:
         # Go over all entries and check them for time compared to ttl
         for pos in range(0, prev_length):
             if self.time[pos] > ttl:
-                rem.extend(pos)
-        for x in rem:
-            # Remove every entry that was found
-            self.ids.pop(x)
-            self.time.pop(x)
-            self.boxes.pop(x)
+                rem.append(pos)
+
+        # Remove every entry that was found:
+        #   Algorithm for this:
+        #   create an empty array for every array where elements should be removed
+        #   iterate over all entry positions in the array
+        #       if the current position is not in the array specifying the position of elements to be removed:
+        #           (--> the entry of this position should be kept and NOT removed)
+        #           append this to the corresponding new array (initialized in the beginning)
+        #   Replace the original arrays with the newly created ones
+        rec_ids = []
+        rec_time = []
+        rec_boxes = []
+        for x in range(0, len(self.ids)):
+            if x not in rem and x < len(self.ids):
+                rec_ids.append(self.ids[x])
+                rec_time.append(self.time[x])
+                rec_boxes.append(self.boxes[x])
+        self.ids = rec_ids
+        self.time = rec_time
+        self.boxes = rec_boxes
+
         return len(rem)
 
     def time_step(self, steps=1):
@@ -253,17 +263,17 @@ class IDMapping:
 
     def add(self, wr, cor):
         # TODO consider adding methods to prevent adding the same wrong id multiple times (correct multi should be ok)
-        self.wrong.extend(wr)
-        self.correct.extend(cor)
+        self.wrong.append(wr)
+        self.correct.append(cor)
 
     def update_data(self, data):
         corrected_data = copy.deepcopy(data)
-        for box in corrected_data:
+        for box in corrected_data.boxes:
             try:
                 # Try to find the id of the next box in the list of ids that were already detected to be wrong
-                index = self.wrong.index(box.unique_id)
+                index = self.wrong.index(box.object_id)
                 # Found an index for the id the list of wrong ids, so replace it
-                box.unique_id = self.correct[index]
+                box.object_id = self.correct[index]
             except ValueError:
                 pass  # id of the box not found in the set of wrong ids
         return corrected_data

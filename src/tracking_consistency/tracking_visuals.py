@@ -83,7 +83,7 @@ class TrackVisuals:
             self.y.extend(y_new[0:min_length])
             self.ids.extend(uid[0:min_length])
             if len(color) > 0:
-                self.colormap.extend(color[0:min_length])
+                self.colormap = np.hstack([self.colormap, color[0:min_length]])
             else:
                 self.colormap = []  # No colors were specified
         else:

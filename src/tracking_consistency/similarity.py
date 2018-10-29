@@ -3,8 +3,6 @@
 File that implements functions/classes that are used for comparing two tracked objects wrt similarity.
 A simple example for this is the pure distance
 """
-import numpy as np
-import rospy
 from t2t_utils import *
 
 
@@ -15,7 +13,9 @@ def dist(p1, p2):
     :param p2: The first point as a tuple (x,y)
     :return: The distance between the two points
     """
-    distance = np.linalg.norm(p1 - p2)
+    x1, y1 = p1
+    x2, y2 = p2
+    distance = np.sqrt((x2 - x1)**2 + (y2 - y1)**2)
     return distance
 
 

@@ -14,7 +14,7 @@ def extract_ids(boxes):
     """
     ids = set()
     for box in boxes:
-        ids.add(box.unique_id)
+        ids.add(box.object_id)
     return ids
 
 

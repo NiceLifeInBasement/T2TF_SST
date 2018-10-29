@@ -27,13 +27,14 @@ def listener():
     global visuals
     rospy.init_node('listener_laser_scan', anonymous=True)
 
-    rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback_org_data)
+    # Create a ConsistencyTracker Object that will be used for the tracking
+    cons_tracker = ConsistencyTracker(sim_checker.sim_position, 0, ttl=4, working_mode="plot", plot_col='b',
+                                      vis=visuals, append=False)
 
-    # create a ConsistencyTracker Object that gets called in the callback function and that plots data in a diff color
-    # to the visuals object so that you can compare how it works out
-    phi = 0.1
-    # cons_track = ConsistencyTracker(working_mode="plot", radius_mult_constant=phi,
-    #                                vis=visuals, plot_col='b', append=True)
+    # Start the subscriber(s)
+    rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, cons_tracker.callback_consistency)
+
+    # rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback_org_data)
 
     # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
     plt.show()
@@ -41,5 +42,5 @@ def listener():
 
 if __name__ == '__main__':
     visuals = TrackVisuals(limit=40, neg_limit=-20, color='b')  # Create a new Visualization object
-    sim_checker = SimilarityChecker(dist_mult=0.001)
+    sim_checker = SimilarityChecker(dist_mult=100000)
     listener()
