@@ -58,7 +58,7 @@ class SimilarityChecker:
         phi = self.dist_mult
         gamma = self.velo_add
 
-        max_dist = time_diff * phi * gamma
+        max_dist = time_diff * phi + gamma
 
         # Calculate the euclidean distance between the two points
         p1 = (old_obj.center_x, old_obj.center_y)

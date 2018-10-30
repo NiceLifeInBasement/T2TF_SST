@@ -31,3 +31,15 @@ Auto updating ros graph:
     dont need spin if you have a blocking tkinter window
         (if you spin, it will crash because tkinter cant deal with multithreading)
     set up the plot, call the "listener"
+
+
+Using rviz to visualize data published to a topic in PointCloud2 Format:
+    Start rviz using: "rosrun rviz rviz"
+    Click "Add" (bottom left)
+    Select PointCloud2
+    The new pointcloud2 object in rviz has a text field topic, enter the name of the topic there (click once next to it)
+    Play the bag once (just start and stop again)
+    The global options have a field "fixed frame" (default "map", has a dropdown after playing the bag)
+    Select ibeo_front_center there
+    --
+    You can now play the bag and alt-tab into rviz to see the visualization of the bag

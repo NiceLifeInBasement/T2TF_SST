@@ -20,6 +20,8 @@ class TrackVisuals:
     specified, the color that was set during init will be used (defaults to red). The arrays should be of the same size.
 
     For example, point 3 will be drawn at (x[3], y[3]) in color color[3], and will be annotated based on id[3]
+
+    Axis can be either symmetric by giving "None" as an upper limit for the y-Axis or can be specified during the init.
     """
 
     fig = None  # Figure of the matplotlib graph
@@ -29,27 +31,47 @@ class TrackVisuals:
     y = []  # List of y Coordinates
     ann_list = []  # List of references to all annotations that are in use
     colormap = []  # List
-    def_color = 'r'  # Default color, if no color map is given, this will be used for all points
+    def_color = 'b'  # Default color, if no color map is given, this will be used for all points
     neg_limit = -50
     limit = 50
+    limit_y = 50
+    neg_limit_y = 50
+    annotation_method = None
+    window_name = "Tracking Visualization"
 
-    def __init__(self, limit=50, neg_limit=-50, color='r'):
+    def __init__(self, limit=50, neg_limit=-50, limit_y=None, neg_limit_y=-50, color='b'):
         """
         Initializes the TrackVisuals object.
         :param limit: The axis upper limit
         :param neg_limit: The axis lower limit
+        :param limit_y: If passed, (neg-)limit will be used for x-Axis only and this will be used for the y-Axis. If not
+                        passed or None, the limits will be symmetric instead
+        :param neg_limit_y: The y-axis lower limit. Only used if limit_y was passed and is not None
         :param color: The default color to be used if no colormap is passed while plotting
         """
+        # Set limits
         self.limit = limit
         self.neg_limit = neg_limit
-        self.fig = plt.figure()
+        if limit_y is None:
+            self.limit_y = limit
+            self.neg_limit_y = neg_limit
+        else:
+            self.limit_y = limit_y
+            self.neg_limit_y = neg_limit_y
+
+        # Set everything to parameters/init everything else
+        self.fig = plt.figure(self.window_name)
         self.ids = []
-        self.ax = plt.axes(xlim=(self.neg_limit, self.limit), ylim=(self.neg_limit, self.limit))
+        self.ax = plt.axes(xlim=(self.neg_limit, self.limit), ylim=(self.neg_limit_y, self.limit_y))
         self.x, self.y = [], []
         self.def_color = color
         # self.ax.autoscale(enable=False)  # Appears to change nothing, should prevent axis autoscaling
         self.sc = self.ax.scatter(self.x, self.y, c=color)
+
+        # Set up the plot annotation, currently just the defaults
         self.default_annotation()
+        # Needs to be called more than once to preserve it through updates, so store it
+        self.annotation_method = self.default_annotation
 
     def plot_points(self, x_new, y_new, uid, color=[], append=False):
         """
@@ -147,6 +169,8 @@ class TrackVisuals:
         Clear the plot
         """
         self.ax.clear()
+        self.annotation_method()
+        # plt.grid()  # Enable showing the background grid
 
     def default_annotation(self):
         """
@@ -162,7 +186,7 @@ class TrackVisuals:
         Necessary if some function calls starts messing with the desired values.
         """
         plt.xlim(self.neg_limit, self.limit)
-        plt.ylim(self.neg_limit, self.limit)
+        plt.ylim(self.neg_limit_y, self.limit_y)
 
     def get_ax(self):
         """

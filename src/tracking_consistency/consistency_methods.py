@@ -160,8 +160,8 @@ class ConsistencyTracker:
 
     def plot_id_data(self, data, vis, color='b', append=False):
         # TODO turn this into an actual commented method
-
         # Quick fix: plot data that also checks the list of changed ids
+
         x_pos = []
         y_pos = []
         uid = []
@@ -179,11 +179,11 @@ class ConsistencyTracker:
         # Update the plot with the list of points from this plot
 
         # ---
-        # Go over list of changed uids and change the color to 'y'
+        # Go over list of changed uids and change the color to 'r'
         for oid in self.id_map.correct:
             if oid in uid:
                 index = uid.index(oid)
-                color_array[index] = 'y'
+                color_array[index] = 'r'
 
         vis.plot_points(x_pos, y_pos, uid, color_array, append)
 

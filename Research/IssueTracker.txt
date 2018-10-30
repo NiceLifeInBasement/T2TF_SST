@@ -33,6 +33,7 @@ SOLVED#2:
 
 #6:
     fusion of which data exactly? given is only one track
+    PARTIAL ANSWER: Fusion with the c2x data, which tracks only up to ~6 objects ?
 
 #7:
     where exactly can I get cov mat from?
