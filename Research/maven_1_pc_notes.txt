@@ -1,0 +1,27 @@
+Notes wrt displaying the point cloud contained in the maven-1.bag
+
+In general, the fact that the points are at x/y-values like x.e+07 is kinda weird
+According to some quick research, rviz has some known issues with this kind of size of values
+
+
+To see anything:
+    I manipulated all points: Reduce their x/y Coordinates by a fix offset (the first x/y coordinate measured)
+       This is an attempt to move the data to somewhere around 0/0 without cluttering it too much into one point
+       however, this doesnt work that great :)
+    Increase the display size in rviz to some big value like 100
+    Zoom out a lot ("distance" in the view(right side of the screen in rviz) for me was 31000)
+    you can then see some boxes going back and forth in the display
+    no road boundaries included like in the other data I assume
+    its possible that this tracks only cars (the objects seem kinda car-like)
+
+    All data is only in one slice (z=0), no layers like in the other bag topic /spherical_grid
+
+    I think this is some weirdly offset data of only the cars going past
+
+    you could consider using this data for the matching between points and boxes that are actual car objects
+        however the point-to-box matching matches to almost all boxes again, however you know that most of the boxes
+        plot road boundaries. maybe you can work something out using that though
+
+    The point-to-box field shows how many points are included: 2018-<...>.bag has >400pts (ie 4x as many!)
+
+    In general, im not sure if this data can be used in a meaningful way
