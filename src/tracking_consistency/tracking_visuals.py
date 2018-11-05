@@ -88,9 +88,9 @@ class TrackVisuals:
         If you have multiple data sources, one should be set to append=False and the rest to append=True. Then, one will
         periodically wipe all data, and the others will add new information afterwards. Appending data without
         synchronized sources is not recommended due to this.
-        :param x_new: The x position of the point as an array
-        :param y_new: The y position of the point as an array
-        :param uid: The numerical identifier of the point (which will be used as a label aswell)
+        :param x_new: The x position of the points as an array
+        :param y_new: The y position of the points as an array
+        :param uid: The numerical identifier of the points (which will be used as a label as well)
         :param color: The colormap for this set. If not specified or "[]", the default color will be used for all points
         :param append: If True, the old points will not be deleted. If False, only the newly passed points will be shown
         """
