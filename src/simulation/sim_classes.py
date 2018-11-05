@@ -5,7 +5,7 @@ Contains class definitions for data simulation for the algorithms
 import rospy
 import numpy as np
 import bob_perception_msgs.msg as bobmsg
-from std_msgs.msg import Float64MultiArray
+from std_msgs.msg import Float64MultiArray, Float64
 import std_msgs.msg
 
 
@@ -14,7 +14,7 @@ class SimulatedVehicle:
     # The following class variables are the core data that is needed for the TrackedOrientedBox
     object_id = -1
     real_center_x = 0
-    real_center_y =object_id = -1
+    real_center_y = 0
     real_angle = 0
     real_length = 0
     real_width = 0
@@ -24,7 +24,7 @@ class SimulatedVehicle:
     # The following are general class variables
     # [...]
 
-    def __init__(self, oid, x=0, y=0, angle=0, length=0, width=0, vel_x=0, vel_y=0):
+    def __init__(self, oid, x=0.0, y=0.0, angle=0.0, length=0.0, width=0.0, vel_x=0.0, vel_y=0.0):
         """
         Initialize the Simulated Vehicle with its core attribute starting values
         :param oid: The object_id
@@ -37,13 +37,13 @@ class SimulatedVehicle:
         :param vel_y: Velocity in y direction
         """
         self.object_id = oid
-        self.real_center_x = x
-        self.real_center_y = y
-        self.real_angle = angle
-        self.real_length = length
-        self.real_width = width
-        self.real_velocity_x = vel_x
-        self.real_velocity_y = vel_y
+        self.real_center_x = float(x)
+        self.real_center_y = float(y)
+        self.real_angle = float(angle)
+        self.real_length = float(length)
+        self.real_width = float(width)
+        self.real_velocity_x = float(vel_x)
+        self.real_velocity_y = float(vel_y)
 
     def get_box(self):
         """
@@ -51,7 +51,6 @@ class SimulatedVehicle:
         :return: Information about this object in the TrackedOrientedBox format
         """
         header = self.create_def_header()
-
         # ----
         # CURRENTLY THIS USES THE DEFAULT SETTING FOR COV: ONLY CENTER AND VELOCITY
         cov_center = True
@@ -60,14 +59,14 @@ class SimulatedVehicle:
         cov_vel = True
         # ----
 
-        oriented_box = bobmsg.OrientedBox(center_x=self.real_center_x, center_y=self.real_center_y,
+        oriented_box = bobmsg.OrientedBox(header=header, center_x=self.real_center_x, center_y=self.real_center_y,
                                           angle=self.real_angle, length=self.real_length, width=self.real_width,
                                           velocity_x=self.real_velocity_x, velocity_y=self.real_velocity_y,
-                                          covariance=self.get_def_cov(), covariance_center = cov_center,
+                                          covariance=self.get_def_cov(), covariance_center=cov_center,
                                           covariance_angle=cov_angle, covariance_length_width=cov_lw,
                                           covariance_velocity=cov_vel)
 
-        bobmsg.TrackedOrientedBox(object_id=self.object_id, box=oriented_box)
+        return bobmsg.TrackedOrientedBox(object_id=self.object_id, box=oriented_box)
 
     def create_def_header(self):
         """
@@ -135,6 +134,21 @@ class SimulatedVehicle:
 
         return Float64MultiArray(data=cov_array)
 
+    def get_sparse_gaussian_measurement(self, stddev_pos=0.15, stddev_vel=0.05):
+        """
+        Gets a sparse measurement of the vehicle, that has a gaussian error.
+        Sparse means that only the position (x,y) and the velocity (vel_x, vel_y) are returned.
+        Gaussian noise std. deviation can be controlled for position and velocity (independent of each other)
+        :param stddev_pos: Standard deviation for the gaussian noise used for the position
+        :param stddev_vel: Standard deviation for the gaussian noise used for the velocity
+        :return: noisy x, y, velocity_x, velocity_y
+        """
+        x = np.random.normal(loc=self.real_center_x, scale=stddev_pos)
+        y = np.random.normal(loc=self.real_center_y, scale=stddev_pos)
+        vel_x = np.random.normal(loc=self.real_velocity_x, scale=stddev_vel)
+        vel_y = np.random.normal(loc=self.real_velocity_y, scale=stddev_vel)
+        return x, y, vel_x, vel_y
+
     def basic_move(self, steps=1):
         """
         Perform one or multiple steps along the current velocity on x and y, without changing anything else about the
@@ -142,8 +156,8 @@ class SimulatedVehicle:
         :param steps: How many steps should be performed.
         :return: x, y coordinates of the new position
         """
-        self.real_center_x += self.real_velocity_x
-        self.real_center_y += self.real_velocity_y
+        self.real_center_x += self.real_velocity_x * steps
+        self.real_center_y += self.real_velocity_y * steps
         return self.real_center_x, self.real_center_y
 
     def basic_accelerate(self, factor, factor_y=None):

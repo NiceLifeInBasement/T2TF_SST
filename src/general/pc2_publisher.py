@@ -41,7 +41,7 @@ def callback_modded(data):
     max_x = -min_x
     for t in point_list:
         if divide:
-            new_t = ((t[0]-xoff) * multi,(t[1]-yoff) * multi, t[2])
+            new_t = ((t[0]-xoff) * multi(t[1]-yoff) * multi, t[2])
         else:
             new_t = (t[0], t[1], t[2])
         redone_list.append(new_t)

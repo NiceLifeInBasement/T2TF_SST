@@ -6,6 +6,7 @@ possible size
 import rospy
 import numpy as np
 from sim_classes import *
+import bob_perception_msgs.msg as bobmsg
 
 
 class SimulationCoordinator:
@@ -19,7 +20,7 @@ class SimulationCoordinator:
         self.vehicles = []
 
     def sample_init(self, no_objects):
-        # Simple init function that creates a few objects
+        # Simple init function that creates a few objects along the x and y axis
         start_x = 0
         start_y = 0
         offset_x = 8
@@ -33,6 +34,58 @@ class SimulationCoordinator:
             self.vehicles.append(next_car)
         # Created all vehicles
 
+    def add_vehicle(self, oid, x=0.0, y=0.0, angle=0.0, length=0.0, width=0.0, vel_x=0.0, vel_y=0.0):
+        """
+        Adds a new vehicle to the list of vehicles that is being simulated.
+        :param oid: Object ID of the new vehicle
+        :param x: x position of the new vehicle
+        :param y: y position of the new vehicle
+        :param angle: angle of the new vehicle
+        :param length: length of the tracking box of the new vehicle
+        :param width: width of the tracking box of the new vehicle
+        :param vel_x: velocity in x direction of the new vehicle
+        :param vel_y: velocity in y direction of the new vehicle
+        :return:
+        """
+        v = SimulatedVehicle(oid, x, y, angle, length, width, vel_x, vel_y)
+        self.vehicles.append(v)
+
+    def small_highway_init(self):
+        # Simple init function that creates a few cars that drive along a small highway
+        self.add_vehicle(0, 10, -50, 0, 0, 0, 0, 2)
+        self.add_vehicle(1, 10, -44, 0, 0, 0, 0, 2)
+        self.add_vehicle(2, 10, -34, 0, 0, 0, 0, 2)
+        self.add_vehicle(3, 5, -55, 0, 0, 0, 0, 4)
+        self.add_vehicle(4, -10, 40, 0, 0, 0, 0, -2)
+        self.add_vehicle(5, -10, 35, 0, 0, 0, 0, -2)
+        self.add_vehicle(6, -10, 30, 0, 0, 0, 0, -2.2)
+        self.add_vehicle(7, -5, 70, 0, 0, 0, 0, -8)
+
+    def get_box_array(self):
+        """
+        Returns a TrackedOrientedBoxArray that contains the TrackedOrientedBoxes of all currently Tracked Cars.
+        This is based on the true data, not on any noisy measurement data
+        :return: TrackedOrientedBoxArray of the true position of all vehicles
+        """
+        h = std_msgs.msg.Header()
+        h.frame_id = "ibeo_front_center"
+        # h.stamp = rospy.Time.now()  # rospy.init_node() needs to be called before this works
+        # Check if you need to stamp this, and if yes, if this works
+        array = []  # Array of the boxes
+        for v in self.vehicles:
+            array.append(v.get_box())
+
+        # Create the return value, i.e. the object of the correct type
+        r = bobmsg.TrackedOrientedBoxArray(header=h, tracks=array)
+        return r
+
+    def get_gaussian_box_array(self, sd_pos=0.5, sd_vel=0.1, sd_angle=0.1, sd_lw=0.5):
+        # Parameters sd_x mean standard_deviation_x where x is for example pos==position
+        # Use this data to determine new values using np.random.normal(loc=TRUE_VALUE, scale=sd_x)
+        # Check which of the parameters are actually necessary (sd_lw is likely not necessary)
+        # TODO currently just returns the box array, but this should return data with gaussian noise!
+        return self.get_box_array()
+
     def move_all(self, steps=1):
         """
         Performs a basic_move step for all vehicles that are being tracked
@@ -44,7 +97,7 @@ class SimulationCoordinator:
     def get_true_visual_list(self, color='b'):
         """
         Returns a list of positions that is suitable for display using a TrackVisuals object. The returned lists can
-        be passed to the TrackVisuals.plot_points function to display them.
+        be passed to the TrackVisuals.plot_points_tuple function to display them.
         This uses the TRUE data of the vehicles, that is not noisy.
         :param color: The Color to be used, defaults to blue
         :return: array of (x_pos, y_pos, ids, color) tuples that can be used for plotting
@@ -55,4 +108,20 @@ class SimulationCoordinator:
             p = (v.real_center_x, v.real_center_y, v.object_id, color)
             # Add this point to the list of points that already exist
             points.append(p)
+        return points
+
+    def get_gaussian_visual_list(self, stddev_pos=0.15, stddev_vel=0.05, color='r'):
+        """
+        Returns a list of positions that is suitable for display using a TrackVisuals object. The returned lists can
+        be passed to the TrackVisuals.plot_points_tuple function to display them.
+        This uses positions of the vehicles that are have gaussian noise
+        :param stddev_pos: Standard deviation for the gaussian noise used for the position
+        :param stddev_vel: Standard deviation for the gaussian noise used for the velocity
+        :param color: The Color to be used, defaults to red
+        :return: array of (x_pos, y_pos, ids, color) tuples that can be used for plotting
+        """
+        points = []
+        for v in self.vehicles:
+            x, y, vel_x, vel_y = v.get_sparse_gaussian_measurement(stddev_pos, stddev_vel)
+            points.append((x, y, v.object_id, color))
         return points
