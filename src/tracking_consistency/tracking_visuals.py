@@ -151,6 +151,22 @@ class TrackVisuals:
         plt.pause(0.0000001)
 
     # TODO consider adding a function that takes an array of 4-tuples (x,y,id,c) and passes this to plot_points
+    def plot_points_tuple(self, points, append=False):
+        """
+        Performs a plot_points operation, however this takes a list of 4-tuples (x,y,id,c) instead of four arrays that
+        represent the points.
+
+        This function just unpacks the array
+        :param points: This list of points as a list of 4-tuples (x,y,id,c)
+        :param append: Whether to append the points or redraw. See plot_points documentation.
+        """
+        x_pos, y_pos, ids, color_list = [], [], [], []
+        for p in points:
+            x_pos.append(p[0])
+            y_pos.append(p[1])
+            ids.append(p[2])
+            color_list.append(p[3])
+        self.plot_points(x_pos, y_pos, ids, color_list, append=append)
 
     def add_point(self, x_new, y_new):
         """
