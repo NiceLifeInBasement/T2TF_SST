@@ -71,6 +71,64 @@ class SimulatedVehicle:
 
         return bobmsg.TrackedOrientedBox(object_id=self.object_id, box=oriented_box)
 
+    def get_gaussian_box(self, sd_pos=0.5, sd_vel=0.1, sd_angle=0.1, sd_lw=-1):
+        """
+        Creates and returns a TrackedOrientedBox for this vehicle, that has gaussian noise applied to it.
+        The noise can be controlled by the args, it will be centered around the actual values with a standard deviation
+        according to the respective sd parameter.
+        Passing any parameter as negative will cause no noise to be applied to its respective value.
+        :param sd_pos: Standard deviation for the position (both x and y)
+        :param sd_vel: Standard deviation for the velocity (in both x and y direction)
+        :param sd_angle: Standard deviation for the angle of the vehicle
+        :param sd_lw: Standard deviation for the length and width of the box.
+        :return: (Gaussian) Noisy information about this object in the TrackedOrientedBox format
+        """
+        # Maybe the noise should affected the covariance?
+
+        # ----
+        # Create a default header for this
+        header = self.create_def_header()
+        # ----
+        # CURRENTLY THIS USES THE DEFAULT SETTING FOR COV: ONLY CENTER AND VELOCITY
+        cov_center = True
+        cov_angle = False
+        cov_lw = False
+        cov_vel = True
+        # ----
+        if sd_pos >= 0:
+            noisy_center_x = np.random.normal(loc=self.real_center_x, scale=sd_pos)
+            noisy_center_y = np.random.normal(loc=self.real_center_y, scale=sd_pos)
+        else:
+            noisy_center_x = self.real_center_x
+            noisy_center_y = self.real_center_y
+
+        if sd_vel >= 0:
+            noisy_velocity_x = np.random.normal(loc=self.real_velocity_x, scale=sd_vel)
+            noisy_velocity_y = np.random.normal(loc=self.real_velocity_y, scale=sd_vel)
+        else:
+            noisy_velocity_x = self.real_velocity_x
+            noisy_velocity_y = self.real_velocity_y
+
+        if sd_angle >= 0:
+            noisy_angle = np.random.normal(loc=self.real_angle, scale=sd_angle)
+        else:
+            noisy_angle = self.real_angle
+
+        if sd_lw >= 0:
+            noisy_length = np.random.normal(loc=self.real_length, scale=sd_lw)
+            noisy_width = np.random.normal(loc=self.real_width, scale=sd_lw)
+        else:
+            noisy_length = self.real_length
+            noisy_width = self.real_width
+
+        oriented_box = bobmsg.OrientedBox(header=header, center_x=noisy_center_x, center_y=noisy_center_y,
+                                          angle=noisy_angle, length=noisy_length, width=noisy_width,
+                                          velocity_x=noisy_velocity_x, velocity_y=noisy_velocity_y,
+                                          covariance=self.get_def_cov(), covariance_center=cov_center,
+                                          covariance_angle=cov_angle, covariance_length_width=cov_lw,
+                                          covariance_velocity=cov_vel)
+
+        return bobmsg.TrackedOrientedBox(object_id=self.object_id, box=oriented_box)
 
     @staticmethod
     def create_def_header():

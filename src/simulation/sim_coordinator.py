@@ -63,14 +63,11 @@ class SimulationCoordinator:
 
     def get_box_array(self):
         """
-        Returns a TrackedOrientedBoxArray that contains the TrackedOrientedBoxes of all currently Tracked Cars.
+        Returns a TrackedOrientedBoxArray that contains the TrackedOrientedBoxes of all currently tracked vehicles.
         This is based on the true data, not on any noisy measurement data
         :return: TrackedOrientedBoxArray of the true position of all vehicles
         """
-        h = std_msgs.msg.Header()
-        h.frame_id = "ibeo_front_center"
-        # h.stamp = rospy.Time.now()  # rospy.init_node() needs to be called before this works
-        # Check if you need to stamp this, and if yes, if this works
+        h = SimulatedVehicle.create_def_header()  # create a default stamped header
         array = []  # Array of the boxes
         for v in self.vehicles:
             array.append(v.get_box())
@@ -79,12 +76,26 @@ class SimulationCoordinator:
         r = bobmsg.TrackedOrientedBoxArray(header=h, tracks=array)
         return r
 
-    def get_gaussian_box_array(self, sd_pos=0.5, sd_vel=0.1, sd_angle=0.1, sd_lw=0.5):
-        # Parameters sd_x mean standard_deviation_x where x is for example pos==position
-        # Use this data to determine new values using np.random.normal(loc=TRUE_VALUE, scale=sd_x)
-        # Check which of the parameters are actually necessary (sd_lw is likely not necessary)
-        # TODO currently just returns the box array, but this should return data with gaussian noise!
-        return self.get_box_array()
+    def get_gaussian_box_array(self, sd_pos=0.5, sd_vel=0.1, sd_angle=0.1, sd_lw=-1):
+        """
+        Returns a TrackedOrientedBoxArray that contains noisy TrackedOrientedBoxes of all currently tracked vehicles.
+        This data is based on noisy data, using a gaussian measurement error centered around the true data, with a
+        standard deviation according to the parameters.
+        A parameter < 0 causes this to return the true data for the respective entries.
+        :param sd_pos: Standard deviation for the position (both x and y)
+        :param sd_vel: Standard deviation for the velocity (in both x and y direction)
+        :param sd_angle: Standard deviation for the angle of the vehicle
+        :param sd_lw: Standard deviation for the length and width of the box.
+        :return: TrackedOrientedBoxArray of the noisy position of all vehicles, using gaussian noise.
+        """
+        h = SimulatedVehicle.create_def_header()  # create a default stamped header
+        array = []  # Array of the boxes
+        for v in self.vehicles:
+            array.append(v.get_gaussian_box(sd_pos=sd_pos, sd_vel=sd_vel, sd_angle=sd_angle, sd_lw=sd_lw))
+
+        # Create the return value, i.e. the object of the correct type
+        r = bobmsg.TrackedOrientedBoxArray(header=h, tracks=array)
+        return r
 
     def move_all(self, steps=1):
         """
