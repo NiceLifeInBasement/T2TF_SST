@@ -121,7 +121,11 @@ class TrackVisuals:
 
         # Remove annotations
         for i, a in enumerate(self.ann_list):
-            a.remove()
+            try:
+                a.remove()
+            except ValueError:
+                # In case some multi-threading has already cleared all the data, don't attempt to remove it
+                pass
         self.ann_list[:] = []  # clear the annotation list
         # Update the plot
         # You may also use: "self.sc.set_offsets(np.c_[self.x, self.y])", however this makes changing the colors harder

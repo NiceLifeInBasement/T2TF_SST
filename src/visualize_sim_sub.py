@@ -5,18 +5,31 @@ Subscribes to topics that contain information about the simulated data and visua
 import rospy
 from tracking_consistency.tracking_visuals import *
 from bob_perception_msgs.msg import TrackedOrientedBoxArray
+import threading as thr
 
 
 def callback_append(data):
-    global vis
+    global vis, vis_lock
     boxes = data.tracks
-    vis.plot_box_array(boxes, color='r', append=False)
+    vis_lock.acquire()
+    vis.plot_box_array(boxes, color='r', append=True)
+    vis_lock.release()
+
+
+def callback_fused(data):
+    global vis, vis_lock
+    boxes = data.tracks
+    vis_lock.acquire()
+    vis.plot_box_array(boxes, color='g', append=True)
+    vis_lock.release()
 
 
 def callback_clear(data):
-    global vis
+    global vis, vis_lock
     boxes = data.tracks
+    vis_lock.acquire()
     vis.plot_box_array(boxes, color='b', append=False)
+    vis_lock.release()
 
 
 def subscriber(no_measurements):
@@ -29,13 +42,16 @@ def subscriber(no_measurements):
         # measurement-subs will append to the data instead of clearing it
         rospy.Subscriber(tname, TrackedOrientedBoxArray, callback_append)
 
+    rospy.Subscriber("/t2t_sim/fused", TrackedOrientedBoxArray, callback_fused)
+
     plt.show()
 
 
 if __name__ == '__main__':
     limit = 80
     measure = 2
-    global vis
+    global vis, vis_lock
     vis = TrackVisuals(limit=limit, neg_limit=-limit)
-    subscriber(2)
+    vis_lock = thr.Lock()
+    subscriber(measure)
 

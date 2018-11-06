@@ -41,19 +41,21 @@ def create_publishers(no_measures=2, qsize=10):
 def publish_all(pub_truth, pub_measure, coordinator):
     pub_truth.publish(coordinator.get_box_array())
     for pub_m in pub_measure:
-        pub_m.publish(coordinator.get_gaussian_box_array())
+        pub_m.publish(coordinator.get_gaussian_box_array(sd_pos=2))
 
 
 if __name__ == '__main__':
     # Default values if nothing was passed via sys.argv
-    no_measures = 2
+    no_measures = 5
     qsize = 10
+    sleep_time = 1
+    no_steps = 15
 
     # Sample application for repeatedly moving a few cars along a "highway" and publishing this data to the topics
     pub_truth, pub_measure, coordinator = create_publishers(no_measures=no_measures, qsize=qsize)
     coordinator.small_highway_init()
-    for s in range(50):
+    for s in range(no_steps):
         publish_all(pub_truth, pub_measure, coordinator)
         coordinator.move_all(steps=1)
         # TODO this function is kinda hard to stop via ctrl-c, probably due to the time.sleep function
-        time.sleep(0.2)
+        time.sleep(sleep_time)
