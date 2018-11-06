@@ -5,7 +5,7 @@ Contains class definitions for data simulation for the algorithms
 import rospy
 import numpy as np
 import bob_perception_msgs.msg as bobmsg
-from std_msgs.msg import Float64MultiArray, Float64
+from std_msgs.msg import Float64MultiArray, Float64, MultiArrayLayout, MultiArrayDimension
 import std_msgs.msg
 
 
@@ -58,7 +58,6 @@ class SimulatedVehicle:
         cov_lw = False
         cov_vel = True
         # ----
-
         oriented_box = bobmsg.OrientedBox(header=header, center_x=self.real_center_x, center_y=self.real_center_y,
                                           angle=self.real_angle, length=self.real_length, width=self.real_width,
                                           velocity_x=self.real_velocity_x, velocity_y=self.real_velocity_y,
@@ -131,8 +130,21 @@ class SimulatedVehicle:
         cov_array[5][1] = cov_array[1][5]
         cov_array[6][1] = cov_array[1][6]
         # TODO check that all the symmetry is correct and maybe change the values to something other than 1.0
+        # Float64MultiArray doesnt work with 2D Arrays, so the array needs to be flattened:
+        cov_array_flat = []
+        # (not using a one liner for the sake of readability)
+        for sublist in cov_array:
+            for item in sublist:
+                cov_array_flat.append(item)
 
-        return Float64MultiArray(data=cov_array)
+        # The following was extracted from maven-1.bag
+        dim_0 = MultiArrayDimension(label="", size=7, stride=49)
+        dim_1 = MultiArrayDimension(label="", size=7, stride=7)
+        cov_dim = [dim_0, dim_1]
+        cov_layout = MultiArrayLayout(dim=cov_dim, data_offset=0)
+
+        return Float64MultiArray(layout=cov_layout, data=cov_array_flat)
+        # return Float64MultiArray(data=[0.0])
 
     def get_sparse_gaussian_measurement(self, stddev_pos=0.15, stddev_vel=0.05):
         """
