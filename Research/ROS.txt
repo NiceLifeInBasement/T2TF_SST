@@ -31,6 +31,7 @@ Auto updating ros graph:
     dont need spin if you have a blocking tkinter window
         (if you spin, it will crash because tkinter cant deal with multithreading)
     set up the plot, call the "listener"
+    (basically instead of rospy.spin() you call plt.show()
 
 
 Using rviz to visualize data published to a topic in PointCloud2 Format:

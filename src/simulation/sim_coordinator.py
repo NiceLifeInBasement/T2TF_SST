@@ -20,15 +20,19 @@ class SimulationCoordinator:
         self.vehicles = []
 
     def sample_init(self, no_objects):
-        # Simple init function that creates a few objects along the x and y axis
-        start_x = 0
-        start_y = 0
+        """
+        Simple init function that creates a few objects along the x and y axis. The vehicles will all be in different
+        positions, but with the same velocity
+        :param no_objects: How many objects should be added
+        """
+        start_x = -20
+        start_y = -20
         offset_x = 8
         offset_y = 0
         vel_x = 2
         vel_y = 1
         for x in range(no_objects):
-            next_x =  start_x + offset_x * x
+            next_x = start_x + offset_x * x
             next_y = start_y + offset_y * x
             next_car = SimulatedVehicle(oid=x, x=next_x, y=next_y, vel_x=vel_x, vel_y=vel_y)
             self.vehicles.append(next_car)
@@ -51,6 +55,10 @@ class SimulationCoordinator:
         self.vehicles.append(v)
 
     def small_highway_init(self):
+        """
+        Very simple init function that creates a few cars that move along a "highway" in both directions (up/down) and
+        in two lanes. 3 cars per side will be going at a slow pace (right lane) and one will pass them in the left lane.
+        """
         # Simple init function that creates a few cars that drive along a small highway
         self.add_vehicle(0, 10, -50, 0, 0, 0, 0, 2)
         self.add_vehicle(1, 10, -44, 0, 0, 0, 0, 2)

@@ -8,6 +8,7 @@ import rospy
 from bob_perception_msgs.msg import *
 import matplotlib.animation as plt_animation
 import matplotlib.pyplot as plt
+from bob_perception_msgs.msg import *
 
 
 class TrackVisuals:
@@ -165,7 +166,29 @@ class TrackVisuals:
             y_pos.append(p[1])
             ids.append(p[2])
             color_list.append(p[3])
+
+        # pass this data to the plot_points function where it will be plotted
         self.plot_points(x_pos, y_pos, ids, color_list, append=append)
+
+    def plot_box_array(self, boxes, color='b', append=False):
+        """
+        Performs a plot_points operation based on data extracted from an array of TrackedOrientedBoxes.
+        :param boxes: Data in the format of an array of TrackedOrientedBoxes
+        :param color: Color to use for the plot (since this is not provided in the TrackedOrientedBox array)
+        :param append: Whether to append the points or redraw. See plot_points documentation.
+        """
+        points = []  # Array where all data points will be stored
+        for tracked_box in boxes:
+            # Extract relevant information for the next box
+            object_id = tracked_box.object_id
+            oriented_box = tracked_box.box
+            x = oriented_box.center_x
+            y = oriented_box.center_y
+            t = (x, y, object_id, color)
+            points.append(t)  # Append this information to the list of points
+
+        # pass this data on to the plot_points_tuple function where it will be processed further
+        self.plot_points_tuple(points=points, append=append)
 
     def add_point(self, x_new, y_new):
         """
