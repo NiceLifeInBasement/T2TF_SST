@@ -28,7 +28,8 @@ def callback(data):
         track_array = data.tracks
     except AttributeError:
         track_array = data.boxes
-        # TODO kind of dirty, currently only supports msg type TrackedLaserScan (and TrackedOrientedBoxArray as default)
+        # currently only supports msg type TrackedLaserScan (and TrackedOrientedBoxArray as default)
+        # due to the way the boxes are accessed in the data
     for entry in track_array:
         if entry.object_id not in ids:
             print("Added " + str(entry.object_id) + " to the set, total size is now: "+str((len(ids)+1)))

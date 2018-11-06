@@ -7,7 +7,6 @@ from t2t_utils import *
 import copy
 
 
-# TODO assuming that data is coming in the TrackedLaserScan format
 class ConsistencyTracker:
     """
     The ConsistencyTracker class can be used to improve consistency in a tracker.
@@ -56,12 +55,12 @@ class ConsistencyTracker:
         Callback method that subscribers can use to generate new data from this class. Will use the set similarity based
         consistency detection algorithm, and generate output according to the working_mode that was previously set.
         :param data: The data that was received from the topic in this time step
+        :type data: TrackedLaserScan
         :return: The newly generated data
         """
-        # TODO IMPORTANT: assumes that data is coming in in the TrackedLaserScan format (uses.boxes to get the arrays)
 
         # If this is the first time step, store data and don't show anything yet
-        # TODO alternatively, maybe just display information normally (instead of return)
+        # alternatively, maybe just display information normally (instead of return)
         if self.old_data is None:
             self.old_data = data
             return
@@ -109,7 +108,6 @@ class ConsistencyTracker:
                 sim_value = self.sim_function(next_box, data.boxes[i].box, next_time)
                 if sim_value <= self.sim_threshold:
                     # According to the similarity function, this object got its id changed
-                    # TODO add something here that lets you later display this object in a different color (use id_map?)
                     # store this id in the mapping of wrong->correct ids for later use
                     self.id_map.add(data.boxes[i].object_id, next_id)
                     # Correct this id
@@ -159,9 +157,16 @@ class ConsistencyTracker:
         vis.plot_points(x_pos, y_pos, uid, color_array, append)
 
     def plot_id_data(self, data, vis, color='b', append=False):
-        # TODO turn this into an actual commented method
-        # Quick fix: plot data that also checks the list of changed ids
-
+        """
+        See plot_data documentation as well.
+        This function does the same, however it also checks the list of corrected ids (the id_mapping) and changes the
+        color of points found in that list to red. Therefor this plots data as usual, but shows all points affected by
+        the consistency checks in red.
+        :param data: An array of TrackedOrientedBox objects (extracted from a msg from a relevant topic usually)
+        :param vis: The TrackVisuals Object used to display the information
+        :param color: A color, e.g. 'b', that will be used to display this information
+        :param append: Whether or not to clear whats currently in the plot
+        """
         x_pos = []
         y_pos = []
         uid = []
@@ -283,19 +288,42 @@ class IDMapping:
     ids (after an id was corrected, simply add it to an IDMapping with the previous(wrong) and new(correct) ID.
     The class provides methods to clean up data by applying the stored mapping
     """
-    wrong = []
-    correct = []
+    wrong = []  # List of wrong ids
+    correct = []  # List of corrected ids
+    # The ids are matched by index in the arrays
 
     def __init__(self):
+        """
+        Creates an empty ID Mapping
+        """
         self.wrong = []
         self.correct = []
 
     def add(self, wr, cor):
-        # TODO consider adding methods to prevent adding the same wrong id multiple times (correct multi should be ok)
-        self.wrong.append(wr)
-        self.correct.append(cor)
+        """
+        Adds an id pair to the mapping. A wrong id cannot be added multiple times (since this would mean that one id
+        should be corrected to different ones, which cant work). However, a correct id can be added multiple times.
+        If a wrong id is passed that is already found in the mapping, its correct id is instead overwritten.
+        :param wr: The wrong id
+        :param cor: The correct id
+        :return: True, if a new pair was added to the mapping, else false
+        """
+        if wr in self.wrong:
+            index = self.wrong.index(wr)
+            self.correct[index] = cor
+            return False
+        else:
+            self.wrong.append(wr)
+            self.correct.append(cor)
+            return True
 
     def update_data(self, data):
+        """
+        Updates a data set (TrackedLaserScan) with the corrected id mapping by rewriting all saved wrong ids to the
+        matching correct ids
+        :param data: The data in TrackedLaserScan format
+        :return: A TrackedLaserScan with corrected ids
+        """
         corrected_data = copy.deepcopy(data)
         for box in corrected_data.boxes:
             try:

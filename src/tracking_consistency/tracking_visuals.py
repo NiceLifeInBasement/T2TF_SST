@@ -150,7 +150,6 @@ class TrackVisuals:
         # Pause for a very short time to let the graphics redraw
         plt.pause(0.0000001)
 
-    # TODO consider adding a function that takes an array of 4-tuples (x,y,id,c) and passes this to plot_points
     def plot_points_tuple(self, points, append=False):
         """
         Performs a plot_points operation, however this takes a list of 4-tuples (x,y,id,c) instead of four arrays that

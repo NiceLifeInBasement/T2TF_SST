@@ -38,7 +38,6 @@ class SimilarityChecker:
     time steps they were apart (0=same time step)
     """
     # List of Hyperparameters that will be used across the functions:
-    # TODO find decent default values for all important onesTrue
     dist_mult = 0.01  # How much velocity is weighted in the position comparison
     velo_add = 1  # A flat value added to all velocity values
 
@@ -48,12 +47,17 @@ class SimilarityChecker:
 
     def sim_position(self, old_obj, new_obj, time_diff):
         """
-        TODO description
-        doesnt take into account velocity
-        :param old_obj:
-        :param new_obj:
-        :param time_diff:
-        :return:
+        Similarity that only takes into account the position and the time passed, but not the velocity etc of the
+        objects.
+        This is according to the following formula:
+        if distance_between_points <= time_passed * multiplicative_factor + additive_factor:
+            return 0
+        else:
+            return (distance_between_points - time_passed * multiplicative_factor + additive_factor)
+        :param old_obj: The first object in OrientedBox format
+        :param new_obj: The second object in OrientedBox format
+        :param time_diff: The numerical difference in time steps between the two objects, 0=same time step
+        :return: A Float describing the similarity between the two objects as a function of difference (0 for similar)
         """
         phi = self.dist_mult
         gamma = self.velo_add
@@ -83,7 +87,7 @@ class SimilarityChecker:
         :param old_obj: The first object in OrientedBox format
         :param new_obj: The second object in OrientedBox format
         :param time_diff: The numerical difference in time steps between the two objects, 0=same time step
-        :return: A Float describing the similarity between the two objects as a function of difference (0 for the same)
+        :return: A Float describing the similarity between the two objects as a function of difference (0 for similar)
         """
         phi = self.dist_mult
         gamma = self.velo_add

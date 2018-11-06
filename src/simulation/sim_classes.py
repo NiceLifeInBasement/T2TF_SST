@@ -10,7 +10,11 @@ import std_msgs.msg
 
 
 class SimulatedVehicle:
-
+    """
+    Instances of this class represent a single vehicle with all relevant information.
+    This class provides methods to manipulate the object data and acquire information about the object, including noisy
+    measurement data.
+    """
     # The following class variables are the core data that is needed for the TrackedOrientedBox
     object_id = -1
     real_center_x = 0
@@ -67,21 +71,21 @@ class SimulatedVehicle:
 
         return bobmsg.TrackedOrientedBox(object_id=self.object_id, box=oriented_box)
 
-    def create_def_header(self):
+
+    @staticmethod
+    def create_def_header():
         """
         Creates a default header that can be used when creating objects for msgs.
         :return: The default header
         """
         # Header can have seq = 0
-        # should have working time stuff (not sure how to implement this, maybe in early tests just put 0)
-        # frame_id = "ibeo_front_center"
         h = std_msgs.msg.Header()
-        # h.stamp = rospy.Time.now()  # rospy.init_node() needs to be called before this works
-        # Check if you need to stamp this, and if yes, if this works
-        h.frame_id = "ibeo_front_center"
+        h.stamp = rospy.Time.now()  # rospy.init_node() needs to be called before this works
+        h.frame_id = "ibeo_front_center"  # same as in all the bag files
         return h
 
-    def get_def_cov(self):
+    @staticmethod
+    def get_def_cov():
         """
         Creates a default covariance matrix that has values for center and velocity
         :return: The covariance matrix in format std_msgs/Float64MultiArray
@@ -108,7 +112,7 @@ class SimulatedVehicle:
         cov_array = [[nan for x in range(w)] for y in range(h)]
 
         # Now insert sensor covariance data into this, for the default case: center+velocity
-        # currently just 1.0 for all values
+        # currently just 1.0 as a default for all values
         # Top left block:
         cov_array[0][0] = 1.0
         cov_array[1][0] = 1.0
@@ -129,7 +133,6 @@ class SimulatedVehicle:
         cov_array[6][0] = cov_array[0][6]
         cov_array[5][1] = cov_array[1][5]
         cov_array[6][1] = cov_array[1][6]
-        # TODO check that all the symmetry is correct and maybe change the values to something other than 1.0
         # Float64MultiArray doesnt work with 2D Arrays, so the array needs to be flattened:
         cov_array_flat = []
         # (not using a one liner for the sake of readability)

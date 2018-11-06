@@ -10,11 +10,11 @@ t2t_sim/measured_<X>:
 
 
 USAGE:
-use create_publishers to create all publishers for the topic and the coordinator object
-init the coordinator object in whatever way you want
-whenever you want to publish the measurements of the cars to all channels, call publish_all
-in between these publishing steps you should use coordinator.move_all etc to change the actual data
-A different client can subscribe to these topics to receive all data about the measured data
+1. use create_publishers to create all publishers for the topic and the coordinator object
+2. init the coordinator object in whatever way you want
+3. whenever you want to publish the measurements of the cars to all channels, call publish_all
+4. in between these publishing steps you should use coordinator.move_all etc to change the actual data
+5. a different client can subscribe to these topics to receive all data about the measured data
 """
 import rospy
 import numpy as np
@@ -34,8 +34,6 @@ def create_publishers(no_measures=2, qsize=10):
         pub_measure.append(rospy.Publisher(topic_name, bobmsg.TrackedOrientedBoxArray, queue_size=qsize))
 
     coordinator = SimulationCoordinator()  # Create a new SimulationCoordinator object
-
-    # TODO find a way to pass a function for the following, instead of hard-coding the function here
 
     return pub_truth, pub_measure, coordinator
 
