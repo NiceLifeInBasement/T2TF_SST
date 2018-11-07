@@ -9,6 +9,7 @@ import threading as thr
 
 
 def callback_append(data):
+    return  # Currently dont do anything here
     global vis, vis_lock
     boxes = data.tracks
     vis_lock.acquire()
@@ -21,6 +22,14 @@ def callback_fused(data):
     boxes = data.tracks
     vis_lock.acquire()
     vis.plot_box_array(boxes, color='g', append=True)
+    vis_lock.release()
+
+
+def callback_CI(data):
+    global vis, vis_lock
+    boxes = data.tracks
+    vis_lock.acquire()
+    vis.plot_box_array(boxes, color='y', append=True)
     vis_lock.release()
 
 
@@ -43,6 +52,7 @@ def subscriber(no_measurements):
         rospy.Subscriber(tname, TrackedOrientedBoxArray, callback_append)
 
     rospy.Subscriber("/t2t_sim/fused", TrackedOrientedBoxArray, callback_fused)
+    rospy.Subscriber("/t2t_sim/fused_CI", TrackedOrientedBoxArray, callback_CI)
 
     plt.show()
 
