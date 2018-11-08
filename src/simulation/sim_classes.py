@@ -49,9 +49,10 @@ class SimulatedVehicle:
         self.real_velocity_x = float(vel_x)
         self.real_velocity_y = float(vel_y)
 
-    def get_box(self):
+    def get_box(self, cov_example_id=0):
         """
         Creates and returns the TrackedOrientedBox for this vehicle
+        :param cov_example_id: The id of the example covariance to be used (imported from maven-1.bag)
         :return: Information about this object in the TrackedOrientedBox format
         """
         header = self.create_def_header()
@@ -65,13 +66,13 @@ class SimulatedVehicle:
         oriented_box = bobmsg.OrientedBox(header=header, center_x=self.real_center_x, center_y=self.real_center_y,
                                           angle=self.real_angle, length=self.real_length, width=self.real_width,
                                           velocity_x=self.real_velocity_x, velocity_y=self.real_velocity_y,
-                                          covariance=self.get_def_cov(), covariance_center=cov_center,
-                                          covariance_angle=cov_angle, covariance_length_width=cov_lw,
-                                          covariance_velocity=cov_vel)
+                                          covariance=self.get_example_cov(example_id=cov_example_id),
+                                          covariance_center=cov_center, covariance_angle=cov_angle,
+                                          covariance_length_width=cov_lw, covariance_velocity=cov_vel)
 
         return bobmsg.TrackedOrientedBox(object_id=self.object_id, box=oriented_box)
 
-    def get_gaussian_box(self, sd_pos=0.5, sd_vel=0.1, sd_angle=0.1, sd_lw=-1):
+    def get_gaussian_box(self, sd_pos=0.5, sd_vel=0.1, sd_angle=0.1, sd_lw=-1, cov_example_id=0):
         """
         Creates and returns a TrackedOrientedBox for this vehicle, that has gaussian noise applied to it.
         The noise can be controlled by the args, it will be centered around the actual values with a standard deviation
@@ -81,6 +82,7 @@ class SimulatedVehicle:
         :param sd_vel: Standard deviation for the velocity (in both x and y direction)
         :param sd_angle: Standard deviation for the angle of the vehicle
         :param sd_lw: Standard deviation for the length and width of the box.
+        :param cov_example_id: The id of the example covariance to be used (imported from maven-1.bag)
         :return: (Gaussian) Noisy information about this object in the TrackedOrientedBox format
         """
         # Maybe the noise should affected the covariance?
@@ -124,7 +126,7 @@ class SimulatedVehicle:
         oriented_box = bobmsg.OrientedBox(header=header, center_x=noisy_center_x, center_y=noisy_center_y,
                                           angle=noisy_angle, length=noisy_length, width=noisy_width,
                                           velocity_x=noisy_velocity_x, velocity_y=noisy_velocity_y,
-                                          covariance=self.get_def_cov(), covariance_center=cov_center,
+                                          covariance=self.get_example_cov(), covariance_center=cov_center,
                                           covariance_angle=cov_angle, covariance_length_width=cov_lw,
                                           covariance_velocity=cov_vel)
 
@@ -145,7 +147,11 @@ class SimulatedVehicle:
     @staticmethod
     def get_def_cov():
         """
-        Creates a default covariance matrix that has values for center and velocity
+        Creates a default covariance matrix that has values for center and velocity.
+
+        THIS FUNCTION IS OUTDATED AND SHOULD NOT BE USED. USE get_example_cov() INSTEAD.
+        This function returns a singular matrix, that can only be used for testing format etc, but not for any actual
+        calculations!
         :return: The covariance matrix in format std_msgs/Float64MultiArray
         """
         # EXPLANATION OF THE COVARIANCE MATRIX:
@@ -198,14 +204,40 @@ class SimulatedVehicle:
             for item in sublist:
                 cov_array_flat.append(item)
 
-        # The following was extracted from maven-1.bag
+        # Create Float64MultiArray similar to those in the bag files
         dim_0 = MultiArrayDimension(label="", size=7, stride=49)
         dim_1 = MultiArrayDimension(label="", size=7, stride=7)
         cov_dim = [dim_0, dim_1]
         cov_layout = MultiArrayLayout(dim=cov_dim, data_offset=0)
 
         return Float64MultiArray(layout=cov_layout, data=cov_array_flat)
-        # return Float64MultiArray(data=[0.0])
+
+    @staticmethod
+    def get_example_cov(example_id=0):
+        """
+        Creates an example covariance matrix. The data in the matrix was acquired from the maven-1.bag file.
+        :param example_id: A constant id of the example in the list of stored examples. Minimum value is 0.
+        Values above the max value will be set to 0 instead.
+        Current maximum value is: 1
+        :return: The covariance matrix in format std_msgs/Float64MultiArray
+        """
+        MAX_SAMPLES = 1
+        if example_id > MAX_SAMPLES:
+            example_id = 0
+        nan = float("NaN")
+        examples = []
+        # Here, just copy-paste some more data from maven-1.bag so that you can choose which example you want
+        examples.append([0.2256878004660412, 0.004743161046803848, nan, nan, nan, 0.4799785723084568, 6.694665570936009e-05, 0.004743161046804125, 0.03333087258142175, nan, nan, nan, 0.0064891656361629295, 0.08962944598353237, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, 0.47997857230845664, 0.006489165636162725, nan, nan, nan, 2.4285886983849885, -0.06696549234373295, 6.694665570941213e-05, 0.08962944598353195, nan, nan, nan, -0.06696549234373322, 1.424665892676366])
+        examples.append([0.5758368975539181, -0.10477581457466455, nan, nan, nan, 3.003595362397707, -0.39924730334819275, -0.10477581457466437, 0.24081097327513568, nan, nan, nan, -0.4539729065847597, 1.439606811146181, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, nan, 3.003595362397709, -0.45397290658476147, nan, nan, nan, 18.613535338951223, -1.9899796692884495, -0.39924730334819236, 1.4396068111461806, nan, nan, nan, -1.9899796692884442, 10.681110693507879])
+
+        # -----------------
+        cov_list = examples[example_id]
+        # Create Float64MultiArray similar to those in the bag files
+        dim_0 = MultiArrayDimension(label="", size=7, stride=49)
+        dim_1 = MultiArrayDimension(label="", size=7, stride=7)
+        cov_dim = [dim_0, dim_1]
+        cov_layout = MultiArrayLayout(dim=cov_dim, data_offset=0)
+        return Float64MultiArray(layout=cov_layout, data=cov_list)
 
     def get_sparse_gaussian_measurement(self, stddev_pos=0.15, stddev_vel=0.05):
         """

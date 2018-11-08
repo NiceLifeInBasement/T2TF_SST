@@ -84,7 +84,7 @@ class SimulationCoordinator:
         r = bobmsg.TrackedOrientedBoxArray(header=h, tracks=array)
         return r
 
-    def get_gaussian_box_array(self, sd_pos=0.5, sd_vel=0.1, sd_angle=0.1, sd_lw=-1):
+    def get_gaussian_box_array(self, sd_pos=0.5, sd_vel=0.1, sd_angle=0.1, sd_lw=-1, cov_example_id=0):
         """
         Returns a TrackedOrientedBoxArray that contains noisy TrackedOrientedBoxes of all currently tracked vehicles.
         This data is based on noisy data, using a gaussian measurement error centered around the true data, with a
@@ -94,12 +94,14 @@ class SimulationCoordinator:
         :param sd_vel: Standard deviation for the velocity (in both x and y direction)
         :param sd_angle: Standard deviation for the angle of the vehicle
         :param sd_lw: Standard deviation for the length and width of the box.
+        :param cov_example_id: The id of the example covariance to be used (imported from maven-1.bag)
         :return: TrackedOrientedBoxArray of the noisy position of all vehicles, using gaussian noise.
         """
         h = SimulatedVehicle.create_def_header()  # create a default stamped header
         array = []  # Array of the boxes
         for v in self.vehicles:
-            array.append(v.get_gaussian_box(sd_pos=sd_pos, sd_vel=sd_vel, sd_angle=sd_angle, sd_lw=sd_lw))
+            array.append(v.get_gaussian_box(sd_pos=sd_pos, sd_vel=sd_vel, sd_angle=sd_angle, sd_lw=sd_lw,
+                                            cov_example_id=cov_example_id))
 
         # Create the return value, i.e. the object of the correct type
         r = bobmsg.TrackedOrientedBoxArray(header=h, tracks=array)

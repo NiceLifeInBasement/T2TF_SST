@@ -39,12 +39,16 @@ def create_publishers(no_measures=2, qsize=10):
 
 
 def publish_all(pub_truth, pub_measure, coordinator):
+    global current_cov_id
     pub_truth.publish(coordinator.get_box_array())
     for pub_m in pub_measure:
-        pub_m.publish(coordinator.get_gaussian_box_array(sd_pos=2))
+        pub_m.publish(coordinator.get_gaussian_box_array(sd_pos=2, cov_example_id=current_cov_id))
+        max_cov_id = 1
+        current_cov_id = (current_cov_id + 1) % (max_cov_id + 1)  # Rotate through all possible cov_ids
 
 
 if __name__ == '__main__':
+    current_cov_id = 0
     # Default values if nothing was passed via sys.argv
     no_measures = 5
     qsize = 10

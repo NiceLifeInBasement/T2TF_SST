@@ -42,6 +42,14 @@ def callback(data):
         rospy.loginfo("UID "+str(uid)+" not found in this callback")
 
 
+def callback_c(data):
+    global count
+    if count < 20:
+        first_box_cov = data.boxes[0].box.covariance.data
+        print(first_box_cov)
+        count += 1
+
+
 def listener():
     # In ROS, nodes are uniquely named. If two nodes with the same
     # node are launched, the previous one is kicked off. The
@@ -54,7 +62,7 @@ def listener():
     # can use msg type "rospy.msg.AnyMsg" to subscribe to any topic you want, but the resulting data is useless
     #   since it is not deserialized
     # rospy.Subscriber("tracked_objects/scan", rospy.msg.AnyMsg, callback)
-    rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback)
+    rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback_c)
 
     # spin() simply keeps python from exiting until this node is stopped
     # rospy.spin()
@@ -62,7 +70,7 @@ def listener():
 
 if __name__ == '__main__':
     listener()
-
+    count = 0
     # The following is only necessary to plot the point data
     # Currently all painted dots are shown, this causes overlapping and cluttering of the graph
     global ax, fig

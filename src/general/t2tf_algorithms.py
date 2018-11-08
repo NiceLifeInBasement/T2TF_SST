@@ -74,12 +74,13 @@ def dual_cov_intersection(P_i, P_j, x_i, x_j, omega_fct=dual_fast_omega):
     #   Commented and spaced is the readable version of the algorithm
     # The actual code is the same, but using numpy operations instead of +/-/*
     w = omega_fct(P_i, P_j)
+    # print("using w = "+str(w))
     # Calculate P and P^(-1)=P_inv first
     #   P_inv = w * inverse(P_i) + (1-w)*inverse(P_j)
     P_inv = np.add(dot(w, inverse(P_i)), dot((1 - w), inverse(P_j)))
     P = inverse(P_inv)
     # Now, proceed by calculating x
     #   x = P * (w * inverse(P_i) * x_i + (1-w)*inverse(P_j)*x_j)
-    x = dot(P, np.add(dot((dot(w, inverse(P_i)),  x_i)), dot(dot((1 - w), inverse(P_j)),  x_j)))
+    x = dot(P, np.add(dot(dot(w, inverse(P_i)),  x_i), dot(dot((1 - w), inverse(P_j)),  x_j)))
     return x, P, w
 
