@@ -1,3 +1,4 @@
+# --- T2TF ---
 http://www.ftm.mw.tum.de/uploads/media/17_Seeliger.pdf
 	Link von Fabian
 	Präsentation zu "Fahrzeugübergreifende Informationsfusion"
@@ -118,3 +119,14 @@ https://ieeexplore.ieee.org/document/7313517
     physical and its local tracker specific properties into account"
     gut geschrieben, gute informationen, teil auf in "full/partial/no info"
     TODO zuende lesen
+
+
+# --- T2TA ---
+http://c4i.gmu.edu/~pcosta/F15/data/fileserver/file/472165/filename/Paper_1570113827.pdf
+    übersicht über t2ta
+    (erster link dazu)
+
+. Ferry, “Xmap: Track-to-track association with metric, feature, and target-type data,” in Information Fusion,
+2006 9th International Conference on , 2006, pp. 1–8.
+    TODO get link, read
+    aus dem ersten link empfohlen als guter ansatz der nicht so viel information nutzt
