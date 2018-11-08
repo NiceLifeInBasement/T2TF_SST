@@ -1,0 +1,37 @@
+# Notes re: erste tele conference (9-Nov-2018)
+# -------------
+# VORHER:
+
+0.
+    Genaue Zielstellung?
+    Siehe auch alle anderen Fragen.
+
+1.
+    Das Tracking beinhaltet viele Objekte, die keine Fahrzeuge sind
+    Müssen die Daten erst noch gefiltert werden?
+    (im LIDAR-Scan sind die meisten sachen als road boundary o.Ä. zu erkennen, dennoch haben diese punkte eine object_id
+    usw. und sind aus den reinen Tracking daten nicht von fahrzeugen zu unterscheiden)
+
+2.
+    Objekte verlieren im Verlauf der Messung ihre ID und bekommen eine neue zugewiesen (auch Fahrzeuge)
+    (problematisch, wenn man eine history an tracking/association ergebnissen nutzen will, weniger schlimm wenn eh in
+    jedem schritt neu T2TA und dann damit T2TF gemacht werden soll)
+
+3.
+    Zweiter Track?
+    Datentyp/format? Enthält covariance daten?
+
+4.
+    T2T Association nötig?
+    wahrscheinlich ja, oder gibt es bereits eine software die die ids der verschiedenen tracks angleicht?
+
+5.
+    [Datenspezifisch]
+    Point-Clouds in dem TrackedLaserScan rostopic sind quasi nicht nutzbar
+        Bzw.: Was enthalten sie? (Daten sind in völlig anderer größenordnung, weniger punkte, riesige x/y werte etc)
+    Ist es möglich, point clouds des scans (wie im ersten bag) hinzuzufügen?
+        --> Würde evaluation von ergebnissen vereinfachen
+
+
+# -------------
+# NACHHER:
