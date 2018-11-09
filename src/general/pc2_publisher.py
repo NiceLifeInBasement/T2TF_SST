@@ -41,7 +41,7 @@ def callback_modded(data):
     max_x = -min_x
     for t in point_list:
         if divide:
-            new_t = ((t[0]-xoff) * multi(t[1]-yoff) * multi, t[2])
+            new_t = ((t[0]-xoff) * multi, (t[1]-yoff) * multi, t[2])
         else:
             new_t = (t[0], t[1], t[2])
         redone_list.append(new_t)
@@ -74,8 +74,11 @@ def republisher(topic_name):
 
 if __name__ == '__main__':
     global xoff, yoff
-    xoff = 0
-    yoff = 0
+    # these offset from maven-1.bag dont really work aswell, since the original data has data in a completly different
+    # region (these offsets are for the c2x data not the trackedlaserscan)
+    xoff = 470224.387970
+    yoff = 5522444.309280
+    # set xoff/yoff to 0 if you want to grab them from the first data point
     topic_name = "pc2data"
     if len(sys.argv) > 1:
         bag_name = sys.argv[1]
