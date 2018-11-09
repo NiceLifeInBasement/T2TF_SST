@@ -126,7 +126,7 @@ http://c4i.gmu.edu/~pcosta/F15/data/fileserver/file/472165/filename/Paper_157011
     übersicht über t2ta
     (erster link dazu)
 
-. Ferry, “Xmap: Track-to-track association with metric, feature, and target-type data,” in Information Fusion,
-2006 9th International Conference on , 2006, pp. 1–8.
-    TODO get link, read
+https://ieeexplore.ieee.org/document/4085938
+    Xmap: Track-to-track association with metric, feature, and target-type data
     aus dem ersten link empfohlen als guter ansatz der nicht so viel information nutzt
+    besteht hauptsächlich aus mathe, geringer praxisbezug im großteil des papers (trotzdem informativ)

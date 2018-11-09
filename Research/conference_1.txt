@@ -20,6 +20,8 @@
 3.
     Zweiter Track?
     Datentyp/format? Enthält covariance daten?
+    wenn v2x daten: diese haben im bag deutlich andere x/y größenordnungen. reicht das "tf"-topic um die koordinaten-
+    systeme anzugleichen?
 
 4.
     T2T Association nötig?
@@ -29,6 +31,8 @@
     [Datenspezifisch]
     Point-Clouds in dem TrackedLaserScan rostopic sind quasi nicht nutzbar
         Bzw.: Was enthalten sie? (Daten sind in völlig anderer größenordnung, weniger punkte, riesige x/y werte etc)
+        reicht auch hier tf um die Daten so umzuformen dass sie wieder sinnvoll sind (wobei es immer noch weniger punkte
+        sind als im anderen bag)
     Ist es möglich, point clouds des scans (wie im ersten bag) hinzuzufügen?
         --> Würde evaluation von ergebnissen vereinfachen
 
