@@ -39,3 +39,43 @@
 
 # -------------
 # NACHHER:
+T2TA wird auf jeden Fall ein kernproblem werden, T2TF reicht auch erstmal CI
+    mglw muss auch zeitliche assoziation von objekten innerhalb eines tracks noch gemacht werden
+
+Nächster arbeitsschritt:
+    T2TA für die C2X + LIDAR Daten
+    T2TF dann auch, ist aber relativ trivial bei 2 fahrzeugen
+
+Datensimulation auch nicht vom tisch, dazu stand wie bisher auch
+
+notiz re: C2X
+    daten werden in unterschiedlichen intervallen gesendet, bei gleichförmiger bewegung nur 1/sec, geht hoch auf bis zu
+    10/sec in kurven/beschleunigung etc
+
+    allgemein werden die C2X daten sparsam bleiben
+
+neue daten kommen ende november
+    aktuelle daten enthalten nur einzelne CAM Nachrichten
+    die neuen daten werden dann CPM nachrichten enthalten (Cooperative perception message, quasi scan des lidarscanners
+    der an in der nähe befindliche objekte gesendet wird (in verarbeiteter form)
+    auch CPM nachrichten aus weiteren quellen (kamera am straßenrand "road side unit"(?))
+
+    --> Wichtig: nicht nur 2 tracks, anzahl der tracks kann variieren (passieren einer kreuzung mit 2 kameras + 1 fahr-
+    zeug das cpm sendet als beispiel)
+
+cov. allgemein schwierig, müssen selbst weg finden um daran zu kommen
+    CPM message format enthält wahrscheinlich keine cov, höchstens stddev
+
+# -------------
+# BA - Ziel
+Zielstellung:
+    A) Verbessern von Fahrzeugerkennung (klassische T2TF Zielstellung)
+    B) Finden von Lücken in der Fahrzeugerkennung und füllen dieser Lücken (durch fusion der tracks)
+
+Daten:
+    lidar track des fahrzeug (wie gehabt)
+    cam nachrichten von in der nähe befindlichen fahrzeugen (werden verhältnismäßig weniger sein)
+    cpm nachrichten von in der nähe befindlichen fahrzeugen
+    anzahl tracks variiert
+    Zieldaten sind position und geschwindigkeit des fahrzeug
+    covariance nur bei bestimmten daten vorhanden
