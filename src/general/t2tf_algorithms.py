@@ -11,6 +11,8 @@ import numpy as np
 def dual_fast_omega(P_i, P_j):
     """
     Implementation of the approximation of omega when using the fast covariance intersection algorithm for two tracks.
+
+    Follows the formula given on slide 24 of: http://www.ftm.mw.tum.de/uploads/media/17_Seeliger.pdf
     :param P_i: The covariance matrix of track i as a 2D numpy-array
     :param P_j: The covariance matrix of track j as a 2D numpy-array
     :return: omega, the weighting of the track i (first parameter). j should be weighted (1-omega)
@@ -25,6 +27,8 @@ def dual_improved_omega(P_i, P_j):
     """
     Implementation of the approximation of omega when using the improved fast covariance intersection algorithm for
     two tracks.
+
+    Follows the formula given on slide 24 of: http://www.ftm.mw.tum.de/uploads/media/17_Seeliger.pdf
     :param P_i: The covariance matrix of track i as a 2D numpy-array
     :param P_j: The covariance matrix of track j as a 2D numpy-array
     :return: omega, the weighting of the track i (first parameter). j should be weighted (1-omega)
@@ -49,7 +53,8 @@ def dual_improved_omega(P_i, P_j):
 
 def dual_cov_intersection(P_i, P_j, x_i, x_j, omega_fct=dual_fast_omega):
     """
-    Implementation of the covariance intersection algorithm for two tracks.
+    Implementation of the covariance intersection algorithm for two tracks, according to the formula given on slide 24
+    of: http://www.ftm.mw.tum.de/uploads/media/17_Seeliger.pdf
 
     One parameter is a function to determine w/omega:
         In the basic CI algorithm, this is a convex optimization problem
