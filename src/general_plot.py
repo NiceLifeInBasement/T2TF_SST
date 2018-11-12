@@ -74,7 +74,7 @@ def callback_tf(data):
 
         # Plot/Print the position of this message
         next_point = (adj_x, adj_y, track.object_id, "y")
-        print(str(next_point))
+        print("Steps: "+str(steps)+" --- Position: "+str(next_point))
         visuals.plot_points_tuple([next_point], append=True)
 
     steps += 1  # c2x was used in another step, increase the counter
