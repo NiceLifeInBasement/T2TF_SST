@@ -1,0 +1,17 @@
+# Notes re: zweite tc
+# -------------
+# VORBEREITUNG:
+1.
+    global time in den messages mitsenden wäre nützlich
+    würde synchronisation deutlich vereinfachen
+    (alternativ müsste mit den nur z.T. vorhandenen sequenznummern gearbeitet werden, die verschoben sind)
+
+
+# -------------
+# VORHER:
+
+
+
+# -------------
+# NACHHER:
+

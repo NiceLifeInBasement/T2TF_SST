@@ -125,8 +125,56 @@ https://ieeexplore.ieee.org/document/7313517
 http://c4i.gmu.edu/~pcosta/F15/data/fileserver/file/472165/filename/Paper_1570113827.pdf
     übersicht über t2ta
     (erster link dazu)
+    "objective: integrate non-kinematic information in the T2TA procedure" - this information is not really given here
+
+https://hal.archives-ouvertes.fr/hal-00740787/document
+    !!! VERY GOOD STARTING POINT !!!
+    "A Track-To-Track Association Method for Automotive Perception Systems"
+    (https://ieeexplore.ieee.org/abstract/document/6232261 IEEE LINK)
+    2012 - peugeot - fitting - real world application
+    "as many sensors as wanted"
+    Splits into sensor layer and fusion layer:
+        "We  assume  that  a  track  is  defined by  a  timestamp,  an  identification  number,  a  target  state
+         estimate and  its  error  covariance  matrix. "
+         target state estimate = position + velocity
+    asynchronous data (buffering used, explanation on different buffering approaches)
+    clear definitions, incl. algorithms
+    --> very good read with a lot of relevant notes regarding all kinds of implementation details
+        applies to this problem quite well, since it doesnt require a lot of information and deals with asynchronity etc
+
+    t2tf for >2sensors is performed hierarchically
+    association is based on generalized Nearest Neighbor
+        presents a well defined algorithm implementing T2TA
 
 https://ieeexplore.ieee.org/document/4085938
     Xmap: Track-to-track association with metric, feature, and target-type data
     aus dem ersten link empfohlen als guter ansatz der nicht so viel information nutzt
     besteht hauptsächlich aus mathe, geringer praxisbezug im großteil des papers (trotzdem informativ)
+
+https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=1428864
+    "Multisensor Track-to-Track Association for Tracks with Dependent Errors"
+    fokus: mehr als 2 sensoren, multi object tracking
+
+https://www.sciencedirect.com/science/article/pii/S1877705814038090
+    "An Asynchronous Track-to-track Association Algorithm without Time Alignment"
+    don't need to synchronize which could be really helpful
+    pretty big focus on the asynchronous aspect, so its rather specific
+
+http://www.cse.psu.edu/~rtc12/CSE598C/datassocPart1.pdf
+    -->http://www.cse.psu.edu/~rtc12/CSE598C/datassocPart2.pdf
+    lecture on "introduction to data association"
+
+https://ieeexplore.ieee.org/abstract/document/8107047
+    "Comparative study of data association approaches for multiple vehicle tracking"
+    Explains multiple approaches and compares them
+    only skimmed this, compares 3 algorithms incl. some implementation details
+
+https://www.spiedigitallibrary.org/conference-proceedings-of-spie/9596/959609/Track-to-track-association-for-object-matching-in-an-inter/10.1117/12.2187108.short?SSO=1
+    "Track-to-track association for object matching in an inter-vehicle communication system"
+    2015 - considers a similar problem (inter vehicle, only gps data (CAM?), T2T)
+    PAYWALL - FIND THE PAPER SOMEWHERE ELSE?
+
+https://ieeexplore.ieee.org/abstract/document/8482908
+    "Track-to-track association using fuzzy membership function and clustering for distributed information fusion"
+    2018 - multi sensor multi target
+    meh, doesn't seem too enticing
