@@ -45,7 +45,7 @@ class SimilarityChecker:
         self.dist_mult = dist_mult
         self.velo_add = velo_add
 
-    def sim_position(self, old_obj, new_obj, time_diff):
+    def sim_position(self, old_obj, new_obj, time_diff=0):
         """
         Similarity that only takes into account the position and the time passed, but not the velocity etc of the
         objects.
@@ -74,7 +74,7 @@ class SimilarityChecker:
         else:
             return pt_dist - max_dist
 
-    def sim_velocity(self, old_obj, new_obj, time_diff):
+    def sim_velocity(self, old_obj, new_obj, time_diff=0):
         """
         ISSUE: LOTS OF VALUES HAVE 0 VELOCITY; BUT NOT ALL
         Compares two objects in OrientedBox format based on the positions. This takes into account velocity based on
