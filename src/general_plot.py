@@ -48,6 +48,7 @@ def callback_tf(data):
     transforms.append(data)
     if c2x is None:
         return
+
     lock.acquire()
 
     tracks = c2x.tracks
@@ -74,8 +75,8 @@ def callback_tf(data):
 
         # Plot/Print the position of this message
         next_point = (adj_x, adj_y, track.object_id, "y")
-        print("Steps: "+str(steps)+" --- Position: "+str(next_point))
         visuals.plot_points_tuple([next_point], append=True)
+        # print("Steps: "+str(steps)+" --- Position: "+str(next_point))  # DEBUG print of the position and # of steps
 
     steps += 1  # c2x was used in another step, increase the counter
     lock.release()
@@ -94,13 +95,12 @@ def listener():
     rospy.Subscriber("/FASCarE_ROS_Interface/car2x_objects", TrackedOrientedBoxArray, callback_c2x)
     # rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback_org_data)
 
-    # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
     if len(sys.argv) > 1:
         fname = sys.argv[1]  # Get the filename
         # now start a rosbag play for that filename
         player_proc = subprocess.Popen(['rosbag', 'play', fname], cwd="data/")
 
-    plt.show()
+    plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
 
     # Kill the process (if it was started)
     if len(sys.argv)>1:
@@ -113,17 +113,5 @@ if __name__ == '__main__':
     transforms = []
     # Create a new Visualization object with the axis limits and "blue" as default plotting color
     visuals = TrackVisuals(limit=65, neg_limit=-40, limit_y=50, neg_limit_y=-40, color='b')
-
-    # Check if params for the similarity checker were passed
-    if len(sys.argv)>3:  # passed dist_mult and velo_add param
-        sim_checker = SimilarityChecker(dist_mult=float(sys.argv[2]), velo_add=float(sys.argv[3]))
-    else:
-        # No params, create one yourself from hard-coded values
-        # Values dist_mult=0.2, velo_add=0 achieve some results (at ttl=4)
-        # Both 0 => No detection happening at all
-
-        sim_checker = SimilarityChecker(dist_mult=0.1, velo_add=0.4)
-        # Uncomment the following line to display the "normal" data without any consistency checking
-        # sim_checker = SimilarityChecker(dist_mult=0, velo_add=0)
 
     listener()
