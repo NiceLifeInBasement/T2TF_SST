@@ -8,8 +8,9 @@ from bob_perception_msgs.msg import TrackedOrientedBoxArray
 import threading as thr
 
 
-def callback_append(data):
-    return  # Currently dont do anything here
+def callback_measurement(data):
+    # Visualize measured data (noisy) in red
+    # return
     global vis, vis_lock
     boxes = data.tracks
     vis_lock.acquire()
@@ -18,6 +19,7 @@ def callback_append(data):
 
 
 def callback_fused(data):
+    # Visualize data from a simple fusing algorithm in green
     global vis, vis_lock
     boxes = data.tracks
     vis_lock.acquire()
@@ -26,6 +28,7 @@ def callback_fused(data):
 
 
 def callback_CI(data):
+    # Visualize data from the Covariance Intersection algorithm in yellow
     global vis, vis_lock
     boxes = data.tracks
     vis_lock.acquire()
@@ -34,6 +37,7 @@ def callback_CI(data):
 
 
 def callback_clear(data):
+    # Visualize the ground truth in blue
     global vis, vis_lock
     boxes = data.tracks
     vis_lock.acquire()
@@ -49,7 +53,7 @@ def subscriber(no_measurements):
     for i in range(no_measurements):
         tname = "/t2t_sim/measured_"+str(i)
         # measurement-subs will append to the data instead of clearing it
-        rospy.Subscriber(tname, TrackedOrientedBoxArray, callback_append)
+        rospy.Subscriber(tname, TrackedOrientedBoxArray, callback_measurement)
 
     rospy.Subscriber("/t2t_sim/fused", TrackedOrientedBoxArray, callback_fused)
     rospy.Subscriber("/t2t_sim/fused_CI", TrackedOrientedBoxArray, callback_CI)
@@ -60,7 +64,6 @@ def subscriber(no_measurements):
 if __name__ == '__main__':
     limit = 80
     measure = 2
-    global vis, vis_lock
     vis = TrackVisuals(limit=limit, neg_limit=-limit)
     vis_lock = thr.Lock()
     subscriber(measure)

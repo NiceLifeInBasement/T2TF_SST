@@ -103,15 +103,19 @@ class SimilarityChecker:
         # Establish the "circle" size, i.e. the maximum distance that the two points can be apart to return a similarity
         # value of 0
         max_dist = time_diff * phi * vel_full
-        FILE = "src/T2TF_SST/data/test.txt"  # name of the file to print similarity values to
+
+        # For debugging purposes, you can use the following code to document similarity values
+        # For example if you need to find a threshold etc
+
+        # FILE = "src/T2TF_SST/data/test.txt"  # name of the file to print similarity values to
         if pt_dist <= max_dist:
             # The two objects were in acceptable distance to each other (based on velocity)
-            with open(FILE, "a") as myfile:
-                myfile.write("0"+"\n")
+            # with open(FILE, "a") as myfile:
+            #    myfile.write("0"+"\n")
             return 0
         else:
             # The two objects were too far from each other, return the distance from the second one to the circle around
             # the first one
-            with open(FILE, "a") as myfile:
-                myfile.write(str(pt_dist - max_dist)+"\n")
+            # with open(FILE, "a") as myfile:
+            #    myfile.write(str(pt_dist - max_dist)+"\n")
             return pt_dist - max_dist

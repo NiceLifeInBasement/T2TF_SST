@@ -9,6 +9,8 @@ from math import isnan
 
 def t2t_distance_single(track_i, track_j):
     """
+    THIS METHOD HAS NOT YET BEEN IMPLEMENTED, USE SOMETHING FROM THE SIMILARITY TRACKER UNTIL THEN
+
     Takes two tracks in the form of OrientedBoxes and calculates the track to track distance between the two.
     This is only considering a single time step and no track history.
 
@@ -112,7 +114,7 @@ def t2ta_collected(tracks, threshold, distance=t2t_distance_single):
             list_tracks.append(single_track)  # store the track in the list of all tracks
             list_origin.append(source_id)  # save the sensor source id of this track
         source_id += 1  # Added all tracks from the current sensor track
-
+    print("Fusing a total of "+str(total_no_tracks)+" tracks.")
     # 3) Create a NxN array for the TTTDs between the tracks
 
     # Create the distance matrix full of nan entries
@@ -197,14 +199,14 @@ def t2ta_collected(tracks, threshold, distance=t2t_distance_single):
             # Save the assignment number for these two tracks
             assignment[lin] = pos_assignment
             assignment[col] = pos_assignment
-        elif isnan(assignment[lin] and not isnan(assignment[col])):
+        elif isnan(assignment[lin]) and not isnan(assignment[col]):
             # b) If only one has already been inserted in a cluster, then add the second to that cluster.
             # In this case lin has not been added yet, but col has been added
             cluster_no = assignment[col]  # Find out which cluster col has been assigned to
             # now add lin to this cluster, that also save the assignment in the list of assignments
             clusters[int(cluster_no)].add(list_tracks[lin])  # The int conversion should not be necessary
             assignment[lin] = cluster_no
-        elif not isnan(assignment[lin] and isnan(assignment[col])):
+        elif not isnan(assignment[lin]) and isnan(assignment[col]):
             # b) If only one has already been inserted in a cluster, then add the second to that cluster.
             # In this case lin has been added , but col has not been added yet
             cluster_no = assignment[lin]  # Find out which cluster col has been assigned to

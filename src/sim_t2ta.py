@@ -4,10 +4,14 @@ Performs track to track association on simulated data.
 
 Currently used to test the t2ta algorithm.
 
+Assumes synchronization has been done for all tracks, sequence ids are used to match incoming messages to each other.
+If sequence numbers are offset this needs to be cleaned before the data is passed to this program.
+However, since this is using simulated data, this should not be an issue and not be a big focus until synchronizing real
+data become the main problem.
+
 Some notes on the current stage of testing (13-Nov-18 / 15:45)
-    TODO find out why there is 24 tracks when 8 cars are tracked by 2 sensors. Possibly t2ta error!!!
-    Using a low threshold reduces the number of clusters that contain wrong ids since then all clusters will be
-    singletons
+    Using a very low threshold reduces the number of clusters that contain wrong ids since then all clusters will be
+    singletons (i.e. splitting of tracks has happened for every measurement!)
 
     Using a very high threshold such as 50 prevents any singleton clusters from spawning. A threshold of 10 is not
     quite enough for this.
@@ -31,11 +35,17 @@ from tracking_consistency.similarity import *
 
 
 def callback_association(data):
+    """
+    Performs an association for the incoming data if data for the same sequence id has already been saved previously,
+    or saves data for future use if no data is stored for this seq. id
+    :param data: TrackedOrientedBoxArray of a sensor track
+    """
     global storage, found_seqs, sim_fct
-    lock.acquire()
+    lock.acquire()  # Using a lock to prevent issues in the array management (all length checks etc would cause issues)
 
+    # Data is assumed to be synchronized by sequence id, so use this to access data from the same time step
     seq = data.header.seq
-    seq -= 1
+    seq -= 1  # -1 because its stored in an array which is zero-based while the ids are not
     if seq in found_seqs:
         # found this sequence in the data, assuming that its position matches its sequence number
         # perform an association step
@@ -63,17 +73,22 @@ def callback_association(data):
         print(" ")
 
     else:
+        # Sequence was not yet found in the data, add it to the storage of data at the correct position (=its seq. id)
+        # First, check if this is actually new data (if not, print a warning message)
         if not len(storage) == seq:
+            # Length of the current data storage and sequence id dont match, so the data is from an outdated time step
+            # Print a warning to the console.
             print("Issue at seq "+str(seq)+"\tdoesnt match storage with length"+str(len(storage)))
         storage.append(data)
         found_seqs.append(seq)
 
-    lock.release()
+    lock.release()  # finished, release the lock
 
 
-def subscriber(no_measurements):
-    # no_measurements should be 2 for now
-    # since I use only one array to store data (so only the incoming track and one stored track are compared)
+def subscriber(no_measurements=2):
+    # no_measurements should be 2 for now (since only one array is used to store data, so only data from that one array
+    # and data that came in in that time step can be used)
+    # since this uses only one array to store data (so only the incoming track and one stored track are compared)
     global pub
     rospy.init_node("T2TA_Test", anonymous=True)
     for i in range(no_measurements):
@@ -84,9 +99,14 @@ def subscriber(no_measurements):
 
 
 if __name__ == '__main__':
-    sim_checker = SimilarityChecker(dist_mult=0.1, velo_add=0.5)
+    # Init the similarity checker that provides the similarity function
+    sim_checker = SimilarityChecker(dist_mult=0.1, velo_add=0.4)
+
+    # Select which similarity function should be used
     sim_fct = sim_checker.sim_position
+    # sim_fct = sim_checker.sim_velocity
+    # Create all the necessary global variables
     lock = thr.Lock()
     storage = []
     found_seqs = []
-    subscriber(2)
+    subscriber(no_measurements=2)
