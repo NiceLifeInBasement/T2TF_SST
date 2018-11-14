@@ -4,3 +4,7 @@ https://stats.stackexchange.com/questions/49901/intuitive-understanding-covarian
 
 http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.476.5164&rep=rep1&type=pdf
     enthält allerlei info re:motion models
+
+
+https://www.cs.utexas.edu/~teammco/misc/kalman_filter/
+        clean and simple kalman explanation (incl algorithm) for state space = (x,y,velX,velY)

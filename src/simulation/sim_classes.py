@@ -123,12 +123,14 @@ class SimulatedVehicle:
             noisy_length = self.real_length
             noisy_width = self.real_width
 
+        cov_matrix = self.get_example_cov(example_id=cov_example_id)  # Acquire a cov from the example list
+
         oriented_box = bobmsg.OrientedBox(header=header, center_x=noisy_center_x, center_y=noisy_center_y,
                                           angle=noisy_angle, length=noisy_length, width=noisy_width,
                                           velocity_x=noisy_velocity_x, velocity_y=noisy_velocity_y,
-                                          covariance=self.get_example_cov(), covariance_center=cov_center,
-                                          covariance_angle=cov_angle, covariance_length_width=cov_lw,
-                                          covariance_velocity=cov_vel)
+                                          covariance=cov_matrix,
+                                          covariance_center=cov_center, covariance_angle=cov_angle,
+                                          covariance_length_width=cov_lw, covariance_velocity=cov_vel)
 
         return bobmsg.TrackedOrientedBox(object_id=self.object_id, box=oriented_box)
 
@@ -143,74 +145,6 @@ class SimulatedVehicle:
         h.stamp = rospy.Time.now()  # rospy.init_node() needs to be called before this works
         h.frame_id = "ibeo_front_center"  # same as in all the bag files
         return h
-
-    @staticmethod
-    def get_def_cov():
-        """
-        Creates a default covariance matrix that has values for center and velocity.
-
-        THIS FUNCTION IS OUTDATED AND SHOULD NOT BE USED. USE get_example_cov() INSTEAD.
-        This function returns a singular matrix, that can only be used for testing format etc, but not for any actual
-        calculations!
-        :return: The covariance matrix in format std_msgs/Float64MultiArray
-        """
-        # EXPLANATION OF THE COVARIANCE MATRIX:
-        # Covariance of the seven dimensional state vector [center_x, center_y, angle,
-        # length, width, velocity_x, velocity_y]. Some elements may be set to NaN if
-        # they have not been computed.
-        #
-        # Example of a covariance matrix where covariance_center = true,
-        # covariance_velocity = true and all other covariance flags set to false:
-        #
-        #              | 1.0, 0.1, nan, nan, nan, 0.2, 0.2 |
-        #              | 0.1, 2.0, nan, nan, nan, 0.2, 0.2 |
-        #              | nan, nan, nan, nan, nan, nan, nan |
-        # covariance = | nan, nan, nan, nan, nan, nan, nan |
-        #              | nan, nan, nan, nan, nan, nan, nan |
-        #              | nan, nan, nan, nan, nan, nan, nan |
-        #              | 0.2, 0.2, nan, nan, nan, 3.0, 2.0 |
-        #              | 0.2, 0.2, nan, nan, nan, 2.0, 4.0 |
-
-        nan = float("NaN")  # nan variable since it gets used quite a bit
-        w, h = 7, 7  # Matrices will always be 7x7, filled with NaN as init
-        cov_array = [[nan for x in range(w)] for y in range(h)]
-
-        # Now insert sensor covariance data into this, for the default case: center+velocity
-        # currently just 1.0 as a default for all values
-        # Top left block:
-        cov_array[0][0] = 1.0
-        cov_array[1][0] = 1.0
-        cov_array[0][1] = cov_array[1][0]  # Symmetric
-        cov_array[1][1] = 1.0
-        # Bottom right block:
-        cov_array[5][5] = 1.0
-        cov_array[6][5] = 1.0
-        cov_array[5][6] = cov_array[6][5]
-        cov_array[6][6] = 1.0
-        # First of the outer block (top right):
-        cov_array[0][5] = 1.0
-        cov_array[0][6] = 1.0
-        cov_array[1][5] = 1.0
-        cov_array[1][6] = 1.0
-        # bottom left block is a copy of that
-        cov_array[5][0] = cov_array[0][5]
-        cov_array[6][0] = cov_array[0][6]
-        cov_array[5][1] = cov_array[1][5]
-        cov_array[6][1] = cov_array[1][6]
-        # Float64MultiArray doesnt work with 2D Arrays, so the array needs to be flattened:
-        cov_array_flat = []
-        # (not using a one liner for the sake of readability)
-        for sublist in cov_array:
-            for item in sublist:
-                cov_array_flat.append(item)
-
-        # Create Float64MultiArray similar to those in the bag files
-        dim_0 = MultiArrayDimension(label="", size=7, stride=49)
-        dim_1 = MultiArrayDimension(label="", size=7, stride=7)
-        cov_dim = [dim_0, dim_1]
-        cov_layout = MultiArrayLayout(dim=cov_dim, data_offset=0)
-
-        return Float64MultiArray(layout=cov_layout, data=cov_array_flat)
 
     @staticmethod
     def get_example_cov(example_id=0):
@@ -232,6 +166,150 @@ class SimulatedVehicle:
 
         # -----------------
         cov_list = examples[example_id]
+        # Create Float64MultiArray similar to those in the bag files
+        dim_0 = MultiArrayDimension(label="", size=7, stride=49)
+        dim_1 = MultiArrayDimension(label="", size=7, stride=7)
+        cov_dim = [dim_0, dim_1]
+        cov_layout = MultiArrayLayout(dim=cov_dim, data_offset=0)
+        return Float64MultiArray(layout=cov_layout, data=cov_list)
+
+    @staticmethod
+    def vec_to_mat(vector):
+        """
+        Converts a vector to matrix with 0s everywhere, except for the diagonal which will have the vectors
+        value as entries
+        :param vector: The vector that will be converted to a matrix
+        :return: A quadratic matrix of 0s with the vector entries on its diagonal
+        """
+        size = len(vector)
+        mat = np.zeros((size, size))
+        for i in range(size):
+            mat[i][i] = vector[i]
+        return mat
+
+    @staticmethod
+    def mirror(mat):
+        """
+        Takes a matrix and mirrors its along its diagonal, for example
+        1 2 3           1 2 3
+        0 4 5   --->    2 4 5
+        0 0 6           3 5 6
+        The diagonal remains unchanged.
+        :param mat: The matrix to be mirrored
+        :return: The parameter matrix mirrored along its diagonal
+        """
+        size = len(mat)
+        for i in range(size):
+            for j in range(i + 1, size):
+                mat[j][i] = mat[i][j]
+        return mat
+
+    @staticmethod
+    def spread(mat, max_fac=0.35):
+        """
+        Uses a random-based algorithm to spread entries from the diagonal to the upper-triangular matrix, and then
+        mirror this so that the resulting matrix is symmetric.
+        The Algorithm is as follows:
+        Perform (matrix size)*5 steps after the upper-triangular has no 0 entries left:
+            Select a random cell
+            Determine a weight for its left neighbor and its downwards neighbor (0..max_fac)
+            Set the cell to the sum of the weighted entries of these two positions
+
+        This function can be used to simulate random covariance matrices based on a vector of variances.
+        Use SimulatedVehicle.vec_to_mat first, and pass the result to this function to acquire such a matrix.
+        :param mat: matrix that should serve as a base, should be a quadratic matrix where all values except for the
+                    diagonal are 0
+        :param max_fac: Maximum weighting for the neighboring cells in the algorithm
+        :return: A symmetric matrix that has values based on the diagonal values
+        """
+        size = len(mat)
+        # Algorithm is based on random selection of matrix elements
+        # It will select elements until the following criteria are met:
+        #   No 0 values are included in the mirrored version of the matrix(i.e. in the top half of this matrix)
+        #   At least min_steps(==size*5) steps were performed AFTER the above condition was met
+        min_steps = size * 5
+        n = 0  # Counts how many steps were done, is only increased as long as no 0 values are present
+        while n < min_steps:
+            # Select a random position in the upper half of the matrix
+            # Select two small random factors that determine how it changes
+            # Set the position to fac_i*field_left + fac_j*field_down
+            i = np.random.randint(0, size)
+            try:
+                j = np.random.randint(i + 1, size)
+            except ValueError:
+                # selected an impossible position, simply try again
+                continue
+
+            if i == j:
+                continue  # don't want to change diagonal, so try again
+
+            # Select the random weightings for the two positions
+            fac_i = np.random.uniform(low=0.0, high=max_fac)
+            fac_j = np.random.uniform(low=0.0, high=max_fac)
+
+            # Add these values to the position if possoble
+            mat[i][j] = 0
+            try:
+                mat[i][j] += fac_i * mat[i - 1][j]
+            except IndexError:
+                pass  # Couldn't add the left entry since this is leftmost already
+            try:
+                mat[i][j] += fac_j * mat[i][j + 1]
+            except IndexError:
+                pass  # Couldn't add the down entry since this is at the bottom
+            if 0 not in SimulatedVehicle.mirror(mat):
+                n += 1
+        # End of while
+        return SimulatedVehicle.mirror(mat)
+
+    @staticmethod
+    def get_random_cov(var_pos=None, var_angle=None, var_lw=None, var_vel=None, max_fac=0.35):
+        """
+        Creates a random covariance matrix based on variance values.
+        Uses the SimulatedVehicle.spread function to create such a matrix.
+        If any parameter is passed as none, its relevant entries in the final matrix will be NaN
+        :param var_pos: Variance for the position (x and y) or None if NaN in the final matrix
+        :param var_vel: Variance for the velocity (a and y) or None if NaN in the final matrix
+        :param var_angle: Variance for the angle or None if NaN in the final matrix
+        :param var_lw: Variance for the length and width or None if NaN in the final matrix
+        :param max_fac: max_fac for the spread() algorithm
+        :return: A covariance matrix in format std_msgs/Float64MultiArray
+        """
+        var_vec = []
+        if var_pos is not None:
+            # Append position variance twice (x+y)
+            var_vec.append(var_pos)
+            var_vec.append(var_pos)
+        if var_angle is not None:
+            # Append angle variance once
+            var_vec.append(var_angle)
+        if var_lw is not None:
+            # Append length/width variance twice (x+y)
+            var_vec.append(var_pos)
+            var_vec.append(var_pos)
+        if var_vel is not None:
+            # Append velocity variance twice (x+y)
+            var_vec.append(var_vel)
+            var_vec.append(var_vel)
+
+        # Create a matrix out of this list and use the spread() function on the result to acquire a cov matrix
+        var_mat = SimulatedVehicle.vec_to_mat(var_vec)
+        var_mat = SimulatedVehicle.spread(mat=var_mat, max_fac=max_fac)
+        # TODO maybe add a line that checks if the matrix is singular and if yes, redoes the calculation
+        # This matrix is not in the correct format yet, its just a numpy 2D array without the necessary NaNs
+        nan = float("NaN")
+
+        # create cov_list, which is a list of covariance entries from the array
+        cov_list = [nan for x in range(49)]
+        # Start with 49 nan entries, now just need to fill in the values at the correct position
+
+        # TODO insert the values at the correct position in the array so that it can be converted to a Float64MultiArray
+        #   check if var_xxx is not None
+        #       then insert all relevant values at the position
+        #   do that for all 4 var variables
+        #   or start by implementing a test version that is only based on setting the usual values (pos+vel) to the
+        #   corresponding values (if a config is given that doesnt match this, print a warning?)
+
         # Create Float64MultiArray similar to those in the bag files
         dim_0 = MultiArrayDimension(label="", size=7, stride=49)
         dim_1 = MultiArrayDimension(label="", size=7, stride=7)
