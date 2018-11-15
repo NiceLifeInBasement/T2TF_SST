@@ -19,6 +19,7 @@ def dual_fast_omega(P_i, P_j):
     """
     # Code using +/-/*
     #   w = det(P_j) / (det(P_i) + det(P_j))
+    # print("Determinants of the matrices: "+str(det(P_j))+"\t"+str(det(P_i)))  # DEBUG print determinants used
     w = np.divide(det(P_j), (np.add(det(P_i), det(P_j))))
     return w
 

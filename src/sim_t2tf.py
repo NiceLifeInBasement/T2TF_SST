@@ -34,7 +34,7 @@ def callback_ci(data):
                     # found a matching one
                     # Perform ci on the data
                     fused_data.tracks[c].box = fusion(tracked_box.box, other_tracked_box.box)
-                    break  # dont need to look further since we found a matching box already
+                    break  # don't need to look further since we found a matching box already
             c += 1  # increment counter
         pub.publish(fused_data)
     else:
@@ -81,8 +81,8 @@ def fusion(track_i, track_j):
     estimate = copy.deepcopy(track_i)  # Create an OrientedBox based on track i
     # PRESETS:
     t2tf = dual_cov_intersection
-    w_calc = dual_fast_omega  # Alt.: dual_improved_omega
-
+    # w_calc = dual_improved_omega  # Alt.: dual_fast_omega
+    w_calc = dual_fast_omega
     # ---
     P_i = to_cov_mat(track_i)  # Covariance matrix of track i
     P_j = to_cov_mat(track_j)  # Covariance matrix of track j
@@ -92,7 +92,7 @@ def fusion(track_i, track_j):
     x_j = [track_j.center_x, track_j.center_y, track_j.velocity_x, track_j.velocity_y]  # Tracking estimate of track j
     x_j = np.array(x_j)
     x, P, w = t2tf(P_i, P_j, x_i, x_j, omega_fct=w_calc)
-
+    print("omega: "+str(w))  # Print out the used omega for DEBUG purposes
     # Update the estimate based on x
     estimate.center_x = x[0]
     estimate.center_y = x[1]

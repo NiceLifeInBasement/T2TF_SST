@@ -47,7 +47,11 @@ def publish_all(pub_truth, pub_measure, coordinator):
     global current_cov_id, stddev
     pub_truth.publish(coordinator.get_box_array())
     for pub_m in pub_measure:
-        pub_m.publish(coordinator.get_gaussian_box_array(sd_pos=stddev, cov_example_id=current_cov_id))
+        sd = stddev + 1*current_cov_id  # Standard deviation for the position of the current measurement
+        # Simply using the current_cov_id to alternate between different variances, the scalar value is just to increase
+        # the impact of the manipulation (current_cov_id is always 0 or 1 if you have 2 measurements)
+
+        pub_m.publish(coordinator.get_gaussian_box_array(sd_pos=sd, cov_example_id=current_cov_id))
         max_cov_id = 1
         current_cov_id = (current_cov_id + 1) % (max_cov_id + 1)  # Rotate through all possible cov_ids
 
@@ -59,7 +63,7 @@ if __name__ == '__main__':
         stddev = float(sys.argv[1])
     current_cov_id = 0
     # Default values if nothing was passed via sys.argv
-    no_measures = 5
+    no_measures = 2
     qsize = 10
     sleep_time = 1
     no_steps = 15

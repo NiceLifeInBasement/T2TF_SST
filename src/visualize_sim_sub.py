@@ -62,9 +62,9 @@ def subscriber(no_measurements):
 
 
 if __name__ == '__main__':
-    limit = 80
+    limit = 40
     measure = 2
-    vis = TrackVisuals(limit=limit, neg_limit=-limit)
+    vis = TrackVisuals(limit=limit, neg_limit=-limit, limit_y=limit*2, neg_limit_y=-limit*2)
     vis_lock = thr.Lock()
     subscriber(measure)
 

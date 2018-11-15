@@ -85,8 +85,6 @@ class SimulatedVehicle:
         :param cov_example_id: The id of the example covariance to be used (imported from maven-1.bag)
         :return: (Gaussian) Noisy information about this object in the TrackedOrientedBox format
         """
-        # Maybe the noise should affected the covariance?
-
         # ----
         # Create a default header for this
         header = self.create_def_header()
@@ -123,8 +121,17 @@ class SimulatedVehicle:
             noisy_length = self.real_length
             noisy_width = self.real_width
 
-        cov_matrix = self.get_example_cov(example_id=cov_example_id)  # Acquire a cov from the example list
+        # ----
+        # The following are options for acquiring a correctly formatted covariance matrix
 
+        # Acquire a cov mat from the example list
+        # cov_matrix = self.get_example_cov(example_id=cov_example_id)
+
+        # Acquire a cov mat from the sd values, var = sd^2 so we square the given values
+        # TODO currently max/min_fac are hardcoded here
+        cov_matrix = self.get_random_cov(var_pos=sd_pos**2, var_vel=sd_vel**2, max_fac=1.15, min_fac=1.0)
+
+        # ----
         oriented_box = bobmsg.OrientedBox(header=header, center_x=noisy_center_x, center_y=noisy_center_y,
                                           angle=noisy_angle, length=noisy_length, width=noisy_width,
                                           velocity_x=noisy_velocity_x, velocity_y=noisy_velocity_y,
@@ -135,15 +142,16 @@ class SimulatedVehicle:
         return bobmsg.TrackedOrientedBox(object_id=self.object_id, box=oriented_box)
 
     @staticmethod
-    def create_def_header():
+    def create_def_header(frame_id="ibeo_front_center"):
         """
         Creates a default header that can be used when creating objects for msgs.
+        :param frame_id: The frame_id to be set. Defaults to "ibeo_front_center" which is used in the real data.
         :return: The default header
         """
-        # Header can have seq = 0
+        # Header can have seq = 0, so we don't set it
         h = std_msgs.msg.Header()
         h.stamp = rospy.Time.now()  # rospy.init_node() needs to be called before this works
-        h.frame_id = "ibeo_front_center"  # same as in all the bag files
+        h.frame_id = frame_id
         return h
 
     @staticmethod
@@ -195,6 +203,7 @@ class SimulatedVehicle:
         0 4 5   --->    2 4 5
         0 0 6           3 5 6
         The diagonal remains unchanged.
+        The upper triangular matrix will be mirrored (and remain unchanged!)
         :param mat: The matrix to be mirrored
         :return: The parameter matrix mirrored along its diagonal
         """
@@ -205,14 +214,14 @@ class SimulatedVehicle:
         return mat
 
     @staticmethod
-    def spread(mat, max_fac=0.35):
+    def spread(mat, max_fac=1.35, min_fac=1.0):
         """
         Uses a random-based algorithm to spread entries from the diagonal to the upper-triangular matrix, and then
         mirror this so that the resulting matrix is symmetric.
         The Algorithm is as follows:
         Perform (matrix size)*5 steps after the upper-triangular has no 0 entries left:
             Select a random cell
-            Determine a weight for its left neighbor and its downwards neighbor (0..max_fac)
+            Determine a weight for its left neighbor and its downwards neighbor (min_fac..max_fac)
             Set the cell to the sum of the weighted entries of these two positions
 
         This function can be used to simulate random covariance matrices based on a vector of variances.
@@ -220,6 +229,7 @@ class SimulatedVehicle:
         :param mat: matrix that should serve as a base, should be a quadratic matrix where all values except for the
                     diagonal are 0
         :param max_fac: Maximum weighting for the neighboring cells in the algorithm
+        :param min_fac: Minimum weighting for the neighboring cells in the algorithm
         :return: A symmetric matrix that has values based on the diagonal values
         """
         size = len(mat)
@@ -244,8 +254,8 @@ class SimulatedVehicle:
                 continue  # don't want to change diagonal, so try again
 
             # Select the random weightings for the two positions
-            fac_i = np.random.uniform(low=0.0, high=max_fac)
-            fac_j = np.random.uniform(low=0.0, high=max_fac)
+            fac_i = np.random.uniform(low=min_fac, high=max_fac)
+            fac_j = np.random.uniform(low=min_fac, high=max_fac)
 
             # Add these values to the position if possoble
             mat[i][j] = 0
@@ -263,7 +273,7 @@ class SimulatedVehicle:
         return SimulatedVehicle.mirror(mat)
 
     @staticmethod
-    def get_random_cov(var_pos=None, var_angle=None, var_lw=None, var_vel=None, max_fac=0.35):
+    def get_random_cov(var_pos=None, var_angle=None, var_lw=None, var_vel=None, max_fac=0.35, min_fac=0.0):
         """
         Creates a random covariance matrix based on variance values.
         Uses the SimulatedVehicle.spread function to create such a matrix.
@@ -273,6 +283,7 @@ class SimulatedVehicle:
         :param var_angle: Variance for the angle or None if NaN in the final matrix
         :param var_lw: Variance for the length and width or None if NaN in the final matrix
         :param max_fac: max_fac for the spread() algorithm
+        :param min_fac: min_fac for the spread() algorithm
         :return: A covariance matrix in format std_msgs/Float64MultiArray
         """
         var_vec = []
@@ -294,21 +305,59 @@ class SimulatedVehicle:
 
         # Create a matrix out of this list and use the spread() function on the result to acquire a cov matrix
         var_mat = SimulatedVehicle.vec_to_mat(var_vec)
-        var_mat = SimulatedVehicle.spread(mat=var_mat, max_fac=max_fac)
-        # TODO maybe add a line that checks if the matrix is singular and if yes, redoes the calculation
+
+        is_singular = True  # Flag for testing whether the matrix is singular or not
+        while is_singular:
+            # Calculate a possible matrix
+            var_mat = SimulatedVehicle.spread(mat=var_mat, max_fac=max_fac, min_fac=min_fac)
+            try:  # Attempt to invert the matrix
+                inverse_test = np.linalg.inv(var_mat)
+                is_singular = False  # inversion successful, proceed
+            except np.linalg.LinAlgError:  # Error during inversion, dont proceed yet
+                is_singular = True
+
         # This matrix is not in the correct format yet, its just a numpy 2D array without the necessary NaNs
         nan = float("NaN")
+
+        # - - - - -
+        # Please note that this is _not_ actual covariance data based on anything
+        # The only basis for the data is the variance of the measurements
+        # This is just for simulation/testing purposes, not to acquire realistic data
+        # - - - - -
 
         # create cov_list, which is a list of covariance entries from the array
         cov_list = [nan for x in range(49)]
         # Start with 49 nan entries, now just need to fill in the values at the correct position
 
-        # TODO insert the values at the correct position in the array so that it can be converted to a Float64MultiArray
-        #   check if var_xxx is not None
-        #       then insert all relevant values at the position
-        #   do that for all 4 var variables
-        #   or start by implementing a test version that is only based on setting the usual values (pos+vel) to the
-        #   corresponding values (if a config is given that doesnt match this, print a warning?)
+        # TODO currently just dealing with the default case (pos+vel cov.) and throwning an error else
+        if (var_pos is not None) and (var_angle is None) and (var_lw is None) and (var_vel is not None):
+            # Default case
+            pass  # Here, insert values at their default (correct) positions
+            # cov_mat has size 4*4 since we have pos+vel cov
+            # cov_list has 49 (7*7) entries, but only the outer 2*2 squares in the corners need to be filled
+            # since pos_cov has ids 0 and 1 and vel_cov has ids 5 and 6
+            cov_list[0] = var_mat[0][0]
+            cov_list[1] = var_mat[0][1]
+            cov_list[5] = var_mat[0][2]
+            cov_list[6] = var_mat[0][3]
+
+            cov_list[7] = var_mat[1][0]
+            cov_list[8] = var_mat[1][1]
+            cov_list[12] = var_mat[1][2]
+            cov_list[13] = var_mat[1][3]
+
+            cov_list[35] = var_mat[2][0]
+            cov_list[36] = var_mat[2][1]
+            cov_list[40] = var_mat[2][2]
+            cov_list[41] = var_mat[2][3]
+
+            cov_list[42] = var_mat[3][0]
+            cov_list[43] = var_mat[3][1]
+            cov_list[47] = var_mat[3][2]
+            cov_list[48] = var_mat[3][3]
+        else:
+            print("Unexpected Covariance entries, assuming that only position and velocity have covariance entries")
+            raise RuntimeError("Received unexpected covariance entries (expecting only pos.+vel. cov.")
 
         # Create Float64MultiArray similar to those in the bag files
         dim_0 = MultiArrayDimension(label="", size=7, stride=49)
