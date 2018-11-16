@@ -1,17 +1,69 @@
 # Notes re: zweite tc
 # -------------
-# VORBEREITUNG:
-1.
-    global time in den messages mitsenden wäre nützlich
-    würde synchronisation deutlich vereinfachen
-    (alternativ müsste mit den nur z.T. vorhandenen sequenznummern gearbeitet werden, die verschoben sind)
-
-
-# -------------
 # VORHER:
+1.
+    Aktuelles Ziel wäre: Assoziation (und vielleicht dann auch direkt Fusion) von c2x mit lidar daten
+        am beispiel des einen c2x objekts das in den aktuellen datensätzen schon drin ist
+    die lidar daten enthalten einzelne (visuell erkennbare) fahrzeuge, die c2x daten sind (nach verschiebung um tf)
+    dennoch nicht mit diesen daten in einklang zu bringen (gemessenes fahrzeug ist "hinter" allen lidar obj.)
+        was muss alles mit tf gemacht werden?
+        bisher nur subtraktion der "translation" daten, rotation ist dafür ja erstmal irrelevant
+        außer die rotation ist um den ursprung und nicht um den eigenen mittelpunkt, in dem fall könnte die drehung das
+        objekt "in den lidarscan hinein" bringen
 
+2.
+    global time ist in den header stamps, sekunden passen aber nano sekunden sind deutlich gegeneinander verschoben
+        reicht das trotzdem für eine synchronisation der daten, oder sollten die stamps ignoriert/durch anderes ergänzt
+        werden?
 
+3.
+    (update zur) lidar daten bereinigung?
+        derzeit werden nicht nur autos sondern auch road boundaries etc als objekte getracked (mit velocity != 0)
+    stichwort objektklassifikation
+
+4.
+    data assoziation (innerhalb des lidar tracks) ist noch nicht konsistent
+        ein objekt bekommt mehrere ids nacheinander, wenn es zwischendurch aus dem tracking verloren ging)
+    geht zwar, aber schwächt t2ta/t2tf, weil eine history nicht einzubeziehen ist
+
+5.
+    was genau sind die point clouds im lidar scan? (größenverhältnisse machen eine visualisierung schwer)
+    (hatten letzte woche auch schon darüber geredet, dass point clouds wie im /spherical_grid topic aus dem alten bag zur
+    evaluation sehr nützlich sind)
+
+6.
+    irgendeine update zu den covariance einträgen bei allen (nicht-lidar) daten?
+        (aktuell c2x (cam) später dann auch cpm)
 
 # -------------
 # NACHHER:
+1.
+    tf wahrscheinlich das problem:
+    nutze richtiges tf objekt (incl rotation) um die daten aufs gleiche koord.sys. zu bringen
+    sollten an sich gut zu einander passen
+    mlgw folgendes szenario:
+        Auto fährt hinterher
+        überholt dann
 
+2.
+    fürs erste: daten so nehmen wie sie reinkommen, später wird auch eine bessere zeitsynch. passieren, aber aktuell
+    nicht darauf verlassen, wie die zeiten stehen
+        allgemein werden die daten aber mit lag oder sogar out-of-order eintreffen
+        synch wird ein zentraler punkt
+
+3.
+    allgemein schwieriger punkt - ibeo bringt sowas mit (neue daten nutzen ibeo track/classification system)
+        aber in wiefern man sich dann auch die Klassifikation von ibeo verlassen sollte ist offen
+    passanten etc sollten im allgemeinen fall durchaus auch berücksichtigt werden
+    müssen nochmal genauer gucken ob sich das noch besser "aufräumen" lässt, hängt auch daran wie wir die daten wollen
+
+4.
+    mglw bereits durch ibeo gelöst - erstmal egal
+
+5.
+    wird sich nochmal angeguckt, allgemein enthält der TrackedLaserScan im point_cloud field die rohdaten des scans
+    die scheinen nur etwas durcheinander gekommen zu sein?
+
+6.
+    covariance einträge werden im allgemeinen bei den tracks dabei sein, gerade auch bei den CPM nachrichten die noch
+    kommen
