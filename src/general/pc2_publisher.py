@@ -57,16 +57,18 @@ def callback_modded(data):
 
 
 def callback(data):
-    # Simply publish the pc2 data without any modifications at all to the channel
+    # Simply publish the pc2 data without any modifications at all
     global pub
-    pub.publish(data.point_cloud)
+    cloud = data.point_cloud
+    cloud.header = data.header  # Header of cloud is not set, so copy the original header (from the data)
+    pub.publish(cloud)
 
 
 def republisher(topic_name):
     global pub
     rospy.init_node('laser_scan_extractor', anonymous=True)
-    pub = rospy.Publisher(topic_name, PointCloud2, queue_size=100)
-    rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback_modded)
+    pub = rospy.Publisher(topic_name, PointCloud2, queue_size=10)
+    rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback)
 
     # and now start spinning so that it doesnt stop
     rospy.spin()
