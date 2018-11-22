@@ -1,0 +1,43 @@
+Upcoming work that has to be done:
+
+SIMULATION OF DATA
+	covariance matrix from variance array (only diag filled)
+
+	implement one of the solutions for way to create covariance matrices, scrap the random-walk algorithm
+
+	change the variance for every sensor and have the covariance algo know that (therefor changing
+	their respective covariance matrices in such a way that the sensor with higher variance will get a lower weight)
+		already implemented a simple way of doing this, maybe redo it (based on variance lists instead of linear change)
+
+	the entire code needs some cleanup re: covariance simulation
+	some functions still get cov_example_id and inside they have hard coded max/min_val for get_random_cov (i.e. the spread fct)
+		
+
+REAL DATA
+	consider testing if you can tf data from the point cloud before showing it in rviz
+		(laser scan data with a point cloud that you rebulish to view it in rviz)
+		or change some rviz setting for the transforms
+
+	possible issue: "rotation" of velocity? maybe need to use some other conversion method of points
+		currently using transformPoint() but that only takes x/y/z (setting z=0)
+		might need to rotate manually anyway? or look through the other functions (transformPose(), lookupTwist()?)
+			could use lookupTwist() and give this twist the velocity data
+		consider implementing your own function that takes a point in the format x/y/vel_x/... and a Transformer object and
+		performs this (or a class that subscribes to the tf topics, creates its own subscriber and can be called just like
+		that)
+	!	the same issue will arise with boxes (since their x/y) dimension change with rotation aswell
+		
+		can maybe just treat them like point coordinates? since its all just x/y data anyway...
+			that should work!?
+		
+
+	T2TA (and maybe even T2TF) algorithm implementation for the transformed data
+		for this, after displaying the c2x+lidar data, regroup it into TrackedOrientedBoxArrays and perform t2ta on that
+		since after displaying the time-sync has already been peformed and the data can now be passed to the t2ta algo
+
+		after looking at the data, t2tf seems to be not so useful here, since the lidar data is stable+accurate
+
+	c2x vehicle display is not working correctly (jumping around etc)
+		probably due to the low frequency of incoming c2x data
+		might need something like a constant velo model to accomodate for the low freq
+		implemented some basic fixes, but its still not up to date compared to the lidar data
