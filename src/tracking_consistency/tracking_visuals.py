@@ -153,7 +153,8 @@ class TrackVisuals:
             self.ann_list.append(self.ax.annotate(str(txt), (self.x[i], self.y[i])))
 
         # Pause for a very short time to let the graphics redraw
-        plt.pause(0.0000001)
+        # plt.pause(0.0000001)
+        plt.gcf().canvas.draw()
 
     def plot_points_tuple(self, points, append=False):
         """

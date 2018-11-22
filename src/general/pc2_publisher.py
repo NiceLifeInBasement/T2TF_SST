@@ -60,6 +60,7 @@ def callback(data):
     # Simply publish the pc2 data without any modifications at all
     global pub
     cloud = data.point_cloud
+    print(cloud.header)
     cloud.header = data.header  # Header of cloud is not set, so copy the original header (from the data)
     pub.publish(cloud)
 

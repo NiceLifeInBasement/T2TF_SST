@@ -47,7 +47,7 @@ Using rviz to visualize data published to a topic in PointCloud2 Format:
 
 
 Using tf:
-    need a source and destination frame (included in /tf and /tf_static
+    need a source and destination frame (included in /tf and /tf_static)
     want to map c2x --> lidar data: src_id=odom and dest_id = ibeo_front_center
     issue: timing of everything is messed up (message arriving in diff intervals with different stamps)
     solution: before storing any information about the frames, change the stamp to rospy.Time(0)
