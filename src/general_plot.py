@@ -33,6 +33,9 @@ import tf
 from geometry_msgs.msg import TransformStamped as tfStamped
 from geometry_msgs.msg import Transform, PointStamped, Point
 from simulation.sim_classes import SimulatedVehicle
+import general.t2ta_algorithms as t2ta
+from tracking_consistency.similarity import *
+import os
 
 visuals = None  # TrackVisuals Object to be used for plotting data
 sim_checker = None  # SimilarityChecker Object to be used for comparing objects
@@ -108,18 +111,39 @@ def callback_tracking(data):
             time_obj = rospy.Time(0)
             x_pos = track.box.center_x
             y_pos = track.box.center_y
+            # Experimental transform of box l/w, velocity
+            x_vel = track.box.velocity_x
+            y_vel = track.box.velocity_y
+            length = track.box.length
+            width = track.box.width
             try:
                 # Try to transform the point
-                # Create a point with z=0 for the source frame (out of c2x tracks x/y) coordinate
+                # Create a point_pos with z=0 for the source frame (out of c2x tracks x/y) coordinate
                 src_f_id = c2x_selection.header.frame_id  # Don't use the global var, instead use the set value
-                # The above line allows for tf outside this function and prevents performing multiple tf steps
-                point = PointStamped(header=SimulatedVehicle.create_def_header(frame_id=src_f_id),
-                                     point=Point(x=x_pos, y=y_pos, z=0))
+                head = SimulatedVehicle.create_def_header(frame_id=src_f_id)
                 # Don't use the current timestamp, use 0 to use the latest available tf data
-                point.header.stamp = rospy.Time(0)
+                head.stamp = rospy.Time(0)
+                # The above line allows for tf outside this function and prevents performing multiple tf steps
+                point_pos = PointStamped(header=head, point=Point(x=x_pos, y=y_pos, z=0))
+                point_vel = PointStamped(header=head, point=Point(x=x_vel, y=y_vel, z=0))
+                # check x/y for the length/width point? might depend on angle and not be this easy
+                point_lw = PointStamped(header=head, point=Point(x=width, y=length, z=0))
                 # Now transform the point using the data
-                tf_point = transformer.transformPoint(target_frame=dest_id, ps=point)
-                next_point = (tf_point.point.x, tf_point.point.y, track.object_id, "y")
+                tf_point_pos = transformer.transformPoint(target_frame=dest_id, ps=point_pos)
+                tf_point_vel = transformer.transformPoint(target_frame=dest_id, ps=point_vel)
+                tf_point_lw = transformer.transformPoint(target_frame=dest_id, ps=point_lw)
+
+                # Store the results back in the track for further use
+                track.box.center_x = tf_point_pos.point.x
+                track.box.center_y = tf_point_pos.point.y
+                track.box.velocity_x = tf_point_vel.point.x
+                track.box.velocity_y = tf_point_vel.point.y
+                # For the following 2, check x/y and if tf them like this makes sense at all
+                track.box.length = tf_point_lw.point.y
+                track.box.width = tf_point_lw.point.x
+
+                # Plotting of the newly transformed point
+                next_point = (tf_point_pos.point.x, tf_point_pos.point.y, track.object_id, "y")
                 visuals.plot_points_tuple([next_point], append=True)
             except tf.ExtrapolationException as e:
                 # Extrapolation error, print but keep going (possible just because only one frame was received so far)
@@ -130,6 +154,29 @@ def callback_tracking(data):
         # End of for going over tracks
         steps += 1  # c2x was used in another step, increase the counter
 
+        # Attempt to perform T2TA here
+        sensor_tracks = []
+        sensor_tracks.append(data.boxes)  # one sensor track is the data for this callback (=lidar tracking data)
+        sensor_tracks.append(tracks)  # The other one is the c2x tracking data
+
+        try:
+            assoc = t2ta.t2ta_collected(sensor_tracks, threshold=t2ta_thresh, distance=sim_fct)
+            # analyse the results
+            ids = []  # this list will hold lists where each entry is an object id in a cluster
+            for a in assoc:  # get a list of all associations
+                temp = []  # stores ids for one association
+                for box in a:  # all tracking boxes in the current association
+                    temp.append(box.object_id)
+                ids.append(temp)  # ids is a list made up of lists of object ids
+            for cl_ids in ids:
+                if 100 in cl_ids:
+                    if len(cl_ids) > 1:
+                        print("<<  Non-singleton Cluster containing 100: "+str(cl_ids)+"  >>")
+                    else:
+                        print("<<  Singleton Cluster containing 100 found  >>")
+        except ValueError:
+            print("ValueError during t2ta")
+        # --- debug:
         # print(str(data.header.stamp.secs)+" vs. "+str(c2x_selection.header.stamp.secs)+
         #      " --diff: "+str(np.abs(data.header.stamp.secs-c2x_selection.header.stamp.secs))+" !!!")
 
@@ -212,16 +259,17 @@ def callback_tf(data):
         x_pos = track.box.center_x
         y_pos = track.box.center_y
         try:
+            head = SimulatedVehicle.create_def_header(frame_id=src_id)
+            # Don't use the current timestamp, use 0 to use the latest available tf data
+            head.stamp = rospy.Time(0)
             # Try to transform the point
             # Create a point with z=0 for the source frame (out of c2x tracks x/y) coordinate
-            point = PointStamped(header=SimulatedVehicle.create_def_header(frame_id=src_id), point=Point(x=x_pos, y=y_pos, z=0))
-            # Don't use the current timestamp, use 0 to use the latest available tf data
-            point.header.stamp = rospy.Time(0)
+            point_pos = PointStamped(header=head, point=Point(x=x_pos, y=y_pos, z=0))
             # Now transform the point using the data
-            tf_point = transformer.transformPoint(target_frame=dest_id, ps=point)
+            tf_point_pos = transformer.transformPoint(target_frame=dest_id, ps=point_pos)
             # Print/Visualize the point
             # print("("+str(x_pos)+" | "+str(y_pos)+")  -->  ("+str(tf_point.point.x)+" | "+str(tf_point.point.y)+")")
-            next_point = (tf_point.point.x, tf_point.point.y, track.object_id, "y")
+            next_point = (tf_point_pos.point.x, tf_point_pos.point.y, track.object_id, "y")
             visuals.plot_points_tuple([next_point], append=True)
         except tf.ExtrapolationException as e:
             # Extrapolation error, print but keep going (possible just because only one frame was received so far)
@@ -273,12 +321,14 @@ def listener():
     if len(sys.argv) > 1:
         fname = sys.argv[1]  # Get the filename
         # now start a rosbag play for that filename
-        player_proc = subprocess.Popen(['rosbag', 'play', fname], cwd="data/")
+
+        FNULL = open(os.devnull, 'w')
+        player_proc = subprocess.Popen(['rosbag', 'play', fname], cwd="data/", stdout=FNULL)
 
     plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
 
     # Kill the process (if it was started)
-    if len(sys.argv)>1:
+    if len(sys.argv) > 1:
         player_proc.terminate()
 
 
@@ -288,5 +338,22 @@ if __name__ == '__main__':
     transforms = []
     # Create a new Visualization object with the axis limits and "blue" as default plotting color
     visuals = TrackVisuals(limit=65, neg_limit=-40, limit_y=50, neg_limit_y=-40, color='b')
+
+    # define a similarity function for t2ta
+    # Init the similarity checker that provides the similarity function
+    sim_checker = SimilarityChecker(dist_mult=0.1, velo_add=0.4)
+    # Select which similarity function should be used
+    sim_fct = sim_checker.sim_position
+    t2ta_thresh = 8
+
+    # When playing maven-2.bag a passing car gets closer to the c2x track than its actual member - t2ta with history
+    # would solve this problem, but the current "simple" similarity checker position-based function can't
+    #   maybe the problem can already be solved by incorporating how old the c2x message was, since it doesnt take
+    #   into account velocity+age and therefor lags behind its actual position
+    # However, when using sim_velocity the system works better
+    # Choosing a small threshold (~3) causes the occasional loss of tracking (100 in singleton)
+    # Choosing a medium threshold (~8) causes no loss
+    # Choosing a bigger threshold will in general cause issues related to other objects getting merged
+    # However due to the low amount of "real" vehicles this isn't really an issue (road boundary merging doesnt matter)
 
     listener()

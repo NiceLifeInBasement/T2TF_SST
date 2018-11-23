@@ -69,6 +69,7 @@ class TrackCluster:
 
 def t2ta_collected(tracks, threshold, distance=t2t_distance_single):
     """
+    TODO check if tracks is actually TOBArray or TOB[] (seems like the latter, needs doc fix)
     First implementation of the Multisensor Track-To-Track Association Algorithm presented in the following paper:
     https://hal.archives-ouvertes.fr/hal-00740787/document.
 
@@ -114,7 +115,7 @@ def t2ta_collected(tracks, threshold, distance=t2t_distance_single):
             list_tracks.append(single_track)  # store the track in the list of all tracks
             list_origin.append(source_id)  # save the sensor source id of this track
         source_id += 1  # Added all tracks from the current sensor track
-    print("Fusing a total of "+str(total_no_tracks)+" tracks.")
+    # print("Fusing a total of "+str(total_no_tracks)+" tracks.")  # DEBUG
     # 3) Create a NxN array for the TTTDs between the tracks
 
     # Create the distance matrix full of nan entries

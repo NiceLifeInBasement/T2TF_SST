@@ -37,6 +37,8 @@ REAL DATA
 
 		after looking at the data, t2tf seems to be not so useful here, since the lidar data is stable+accurate
 
+		t2ta is working for this (sim_position(dist_mult=0.1, velo_add=0.4) with threshold = 5)
+
 	c2x vehicle display is not working correctly (jumping around etc)
 		probably due to the low frequency of incoming c2x data
 		might need something like a constant velo model to accomodate for the low freq
