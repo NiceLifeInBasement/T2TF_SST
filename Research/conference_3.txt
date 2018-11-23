@@ -1,0 +1,62 @@
+# Notes re: dritte tc
+# -------------
+# VORHER:
+1.
+    Fortschritt meinerseits:
+    Transformation der c2x daten funktioniert mittels tf
+        Lösung aktuell noch etwas unsauber (timing stimmt nicht, deswegen erwzinge 0 für alle frame times, zeige immer
+        die c2x daten an die zeitlich am besten zu den aktuellen lidar daten passen (durch die visualisierung entsteht
+        eine verzögerung, die die lidar daten betrifft aber die c2x daten nicht/weniger))
+    T2TA algorithmus für c2x+lidar (echtdaten) funktioniert
+        fine tuning / verbesserung der distanzberechnung nötig, für szenarios mit mehr fahrzeugen die eng aneinander
+        vorbei fahren, aber im aktuellen szenario kann mit relativ einfachen funkionen eine hohe genauigkeit erreicht
+        werden
+
+2.
+    Fortschritt bei den neuen daten?
+
+3.
+    trackedlaserscan point cloud anzeige in rviz funktioniert nicht, folgendes ausprobiert:
+        - header setzen wie in der mail beschrieben
+        - fixed_frame in rviz ändern
+        - frame_id der point cloud vor dem publishen ändern
+
+4.
+    BA (2.)Betreuer?
+
+# NACHHER:
+1.
+    history loss (id verloren) wird in realen szenarios viel auftreten, sollte also mit einbezogen werden
+    t2ta sollte beliebig viele tracks mit beliebig vielen objekten nutzen können
+
+    "scheint so als wäre bagfile 1 gelöst" --> weiter mit bagfile 2, gucken ob sich alles auf das szenario übertragen
+    lässt
+
+    dynamischer state space vector wäre sehr gut
+        -> bei der implementation schon darauf achten
+        bspw: eigentlich [x,y,velx,vely,length,width(,angle)] -- es kann aber sein dass ein sensor keine velocity daten
+        liefert, dann können diese nicht mit einbezogen werden.
+2.
+    nächste woche viele fahrzeuge in braunschweig
+    hoffentlich cpm nachrichten in neuen bag files
+    mglw kameradaten als 3. track
+        wahrscheinlich nicht (wird bis dahin nicht lauffähig)
+        würde dann keine frame-to-frame assoziation haben
+
+3.
+    nicht so wichtig, wird sich nochmal angeguckt
+    kein akuter fortschritt
+
+4.
+    zweitbetreuer vom dlr: ja (muss nur noch mit der uni abgesprochen werden usw)
+    projekt mit dem dlr wird erstmal nichts - BA also selbstständig (bzw im kontext mit der kooperation unigö-dlr)
+    TODO titel finden - bis zum 26.11. (da dann vorläufige anmeldung)
+       stichwörter: track to track (association and) fusion algorithms for ...
+            - automotive perception systems?
+            - car tracking?
+            ... using v2x?
+
+---
+https://www.nuscenes.org/
+    mglw nützliches dataset
+    sieht auf jeden fall sehr vielversprechend aus
