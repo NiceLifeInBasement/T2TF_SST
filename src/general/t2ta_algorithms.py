@@ -256,3 +256,18 @@ def t2ta_collected(tracks, threshold, distance=t2t_distance_single):
     for c in clusters:  # Extract the list of TrackedOrientedBox Objects from each cluster
         cluster_list.append(c.get())
     return cluster_list
+
+
+def t2ta_historic(obj_ids, sensor_ids, history_size, history):
+    """
+    TODO documentation and possibly correct parameters
+    Performs track to track association using a distance function that is based on historic data that is extracted from
+    the TrackingHistory instance "history" (parameter).
+
+    :param obj_ids:
+    :param sensor_ids:
+    :param history_size:
+    :param history:
+    :return:
+    """
+    return []  # Empty cluster list return right now

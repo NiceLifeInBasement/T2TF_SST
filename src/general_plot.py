@@ -36,6 +36,7 @@ from simulation.sim_classes import SimulatedVehicle
 import general.t2ta_algorithms as t2ta
 from tracking_consistency.similarity import *
 import os
+from t2t_history import *
 
 visuals = None  # TrackVisuals Object to be used for plotting data
 sim_checker = None  # SimilarityChecker Object to be used for comparing objects
@@ -46,30 +47,6 @@ tf_list = []  # List that can be used to store tf data for later use, CURRENTLY 
 src_id = "odom"  # transformations are performed FROM this frame
 dest_id = "ibeo_front_center"  # transformations are performed TO this frame
 inc_c2x = True  # Flag that determines whether the callback_tracking function should also include stored c2x data
-
-
-def closest_match(data, stamp):
-    """
-    Selects the closest match wrt time from the list data compared to the timestamp stamp
-    :param data: A list of objects with a header that have a time stamp
-    :param stamp: Timestamp to compare to
-    :return: The object from the list with the closest matching time stamp
-    """
-    if data is None or stamp is None or len(data) == 0:
-        return None  # return None if no data was given
-    min_val = rospy.Duration(99999999, 0)  # init value is a very long duration, so that the first comp is smaller
-    min_pos = 0  # position of the minimum
-    for i in range(len(data)):  # use a counter var to store min position
-        datapoint = data[i]  # select the current data point from the list
-        diff = datapoint.header.stamp - stamp
-        diff.secs = abs(diff.secs)
-        diff.nsecs = abs(diff.nsecs)
-        if diff < min_val:
-            min_val = diff
-            min_pos = i
-    # print("selected"+str(min_pos)+"/"+str(len(data))+" data with diff: "+
-    #      str(min_val.secs)+" nsecs:"+str(min_val.nsecs))
-    return data[min_pos]
 
 
 def callback_tracking(data):
