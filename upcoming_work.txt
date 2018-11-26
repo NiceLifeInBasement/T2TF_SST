@@ -5,7 +5,7 @@ SIMULATION OF DATA
 
 	implement one of the solutions for way to create covariance matrices, scrap the random-walk algorithm
 
-	change the variance for every sensor and have the covariance algo know that (therefor changing
+	change the variance for every sensor and have the covariance algo know that (therefore changing
 	their respective covariance matrices in such a way that the sensor with higher variance will get a lower weight)
 		already implemented a simple way of doing this, maybe redo it (based on variance lists instead of linear change)
 
@@ -18,6 +18,8 @@ REAL DATA
 		(laser scan data with a point cloud that you rebulish to view it in rviz)
 		or change some rviz setting for the transforms
 
+		--> changed the fixed_frame in rviz or the point cloud header before publishing doesnt work
+
 	possible issue: "rotation" of velocity? maybe need to use some other conversion method of points
 		currently using transformPoint() but that only takes x/y/z (setting z=0)
 		might need to rotate manually anyway? or look through the other functions (transformPose(), lookupTwist()?)
@@ -28,18 +30,65 @@ REAL DATA
 	!	the same issue will arise with boxes (since their x/y) dimension change with rotation aswell
 		
 		can maybe just treat them like point coordinates? since its all just x/y data anyway...
-			that should work!?
-		
-
-	T2TA (and maybe even T2TF) algorithm implementation for the transformed data
-		for this, after displaying the c2x+lidar data, regroup it into TrackedOrientedBoxArrays and perform t2ta on that
-		since after displaying the time-sync has already been peformed and the data can now be passed to the t2ta algo
-
-		after looking at the data, t2tf seems to be not so useful here, since the lidar data is stable+accurate
-
-		t2ta is working for this (sim_position(dist_mult=0.1, velo_add=0.4) with threshold = 5)
+			that should work!? 
+		--> currently implemented this like this, but for length/width this is problematic I think
 
 	c2x vehicle display is not working correctly (jumping around etc)
 		probably due to the low frequency of incoming c2x data
-		might need something like a constant velo model to accomodate for the low freq
-		implemented some basic fixes, but its still not up to date compared to the lidar data
+	!	might need something like a constant velo model to accomodate for the low freq
+			take into account age+velocity of the car (probably with a small multiplicative factor to reduce impact)
+				
+		--> implemented some basic fixes, but its still not up to date compared to the lidar data		
+
+	implement t2tdistance with history 
+		it requires covariance data. however you can simply implement something that uses the identity matrix as cov unless
+		covariance is given for both tracks - you would still gain something from taking history into account
+			automatically check for this before computing the distance
+		implement a class that allows storing OrientedBoxes for the history:
+			- take into account: object id, sensor source(unique id), timestep (numerical) to identify which box should
+			  be returned
+			- should be able to return an array of boxes for a timestep, history size, object id, sensor source id
+				This array contains all trackedboxes from time "timestep-history_size" to time "timestep" that 
+				belong to this object id and sensor souce i
+				kwarg history_size=1, with history_size=1 only return the box for the current timestep
+			- ??: if timestep=-1: start with the most recent data
+				issue: what if different tracks have different #datapoints? start with the most recent one for all of
+				them, and go back individually? (probably, could also take the most recent one as fixed start point
+				for the rest)
+		since we have to deal with history loss, the length of the used history should be:
+				min(wanted_history_size, history_size_A, history_size_B)	
+				where:  wanted_history_size is the history size n as described in the paper
+					history_size_X is the total number of historical tracks of object X
+				i.e. take as much history as possible without going over history size n
+				this check needs to be done outside the t2thistory object, since that one returns for a single id
+		t2t_distance function should take the finished arrays that were acquired from the class
+			its possible that the t2ta algorithm needs to be duplicated - the current algorithm associates multiple box[]
+			but doesnt have a way to distinguish between sources - therefore it can't acquire the history data
+			would need a source identifier for each array (object id is in the track) and probably a timestep
+			can also take timestep=-1 to always use the most recent one
+				if you use this to grab orientedboxes this might be an issue
+			I think it can work on the same function by adding some kwargs that specify sensor sources etc
+				need a consistant naming of sensors across functions (c2x_0, lidar_0?)
+				need to do all the extraction from the history data in the t2ta algorithm
+				might need to pass the t2thistory object to the t2ta algorithm aswell
+			could end up being a lot of clutter in the (currently very clean/minimalistic) t2ta algo
+				consider beginning by duplicating it and implementing a second version with the history feature	
+			t2td function should take arbitrary state space vectors into account 
+				maybe assume that if NaN is given, the field is discarded in both state vectors
+				(for the t2td dist calc)
+				downside of this: nan makes merging of vectors later on harder
+				upside: can identify given and missing fields without further parameters			
+	!	ISSUE:  non-synced data coming in will cause issues if the history size gets bigger, since the data points that get
+			matched against each other will not be from the same real time
+				example: 1 c2x point per 5 lidar points:
+				History size of 5 will cause 
+		POSSIBLE SOLUTION: history_size is a rospy.Duration object, and instead of taking into account the amount of steps
+				all steps going back until this time are taken.
+				This would require a second processing step, because the resulting arrays will be of different sizes.
+				Therefore, in this second step 
+
+	perform t2ta on the second data set (maven-2.bag)
+
+	consider adding in (/testing) the following change to the t2td(with history) function:
+		instead of averaging over all time points included in the history, weight the more recent ones higher
+		need to think about a weighting and how much sense this makes

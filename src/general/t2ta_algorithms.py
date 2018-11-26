@@ -10,6 +10,9 @@ from math import isnan
 def t2t_distance_single(track_i, track_j):
     """
     THIS METHOD HAS NOT YET BEEN IMPLEMENTED, USE SOMETHING FROM THE SIMILARITY TRACKER UNTIL THEN
+        its not really useful, given that the idea behind the original is to use covariance data and history data,
+        but both of these things would be disregarded if this was to be implemented like this
+    CURRENTLY ALWAYS RETURN 0.0
 
     Takes two tracks in the form of OrientedBoxes and calculates the track to track distance between the two.
     This is only considering a single time step and no track history.

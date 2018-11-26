@@ -40,11 +40,12 @@ import os
 visuals = None  # TrackVisuals Object to be used for plotting data
 sim_checker = None  # SimilarityChecker Object to be used for comparing objects
 transforms = None  # Transformation Array
-c2x = []
-transformer = None
-tf_list = []
-src_id = "odom"
-dest_id = "ibeo_front_center"
+c2x = []  # Array that is used to store all incoming c2x messages
+transformer = None  # tf.transformerROS object used to transform coordinates between frames
+tf_list = []  # List that can be used to store tf data for later use, CURRENTLY NOT IN USE
+src_id = "odom"  # transformations are performed FROM this frame
+dest_id = "ibeo_front_center"  # transformations are performed TO this frame
+inc_c2x = True  # Flag that determines whether the callback_tracking function should also include stored c2x data
 
 
 def closest_match(data, stamp):
@@ -75,35 +76,30 @@ def callback_tracking(data):
     """
     Plot data from the original laser scans
     """
-    inc_c2x = True  # Flag to determine whether this should include c2x data
-    reset_tf = False  # Flag to determine whether this should reset c2x+ibeo_front_center tf data from tf_list
-    global visuals, lock, transforms, steps, c2x
+    # Set inc_c2x to False if you want this function to just display data from the lidar tracking
+    # Set inc_c2x to True if you want this function to display c2x data on top of that, and perform t2ta between the
+    # two tracks
+
+    global visuals, lock, transforms, steps, c2x, inc_c2x
     lock.acquire()
     # c2x_selection = c2x_list[len(c2x_list)-1]  # Select the last c2x data
+
     # Don't take the last received c2x, but instead take the c2x data that is closest to the current data (wrt time)
     c2x_selection = closest_match(c2x, data.header.stamp)
+
     visuals.plot_box_array(data.boxes, append=False)
-    if reset_tf:
-        # Acquire a set of all names of tfs
-        all_names = set()
-        for tf_obj in tf_list:
-            all_names.add(tf_obj.header.frame_id)
-        transformer.clear()
-        for frame_name in all_names:
-            # Create a sublist that contains all tf data with frame_id == frame_name
-            frame_list = []
-            for tf_obj in tf_list:
-                if tf_obj.header.frame_id == frame_name:
-                    # object matches frame_id name
-                    frame_list.append(tf_obj)
-            # frame_list now contains all relevant objects for the current frame_name
-            # now determine the closest match of tf data from this list
-            best_match = closest_match(frame_list, data.header.stamp)
-            best_match.header.stamp = rospy.Time(0)
-            transformer.setTransform(best_match)
 
     if inc_c2x and c2x_selection is not None:
         # Also include c2x data in the plot
+
+        # ---
+        # The following is the c2x data transformation, where the c2x pos/vel etc are transformed into the same coord.
+        # frame as the tracking data that was received in this time step.
+        # For this, all tracks in the c2x data are transformed using the transformer object.
+        # Afterwards, T2TA is attempted on the resulting data. Results of this are printed to console, but currently
+        # not passed on in any way. A future implementation should probably include a publisher, that publishes the
+        # resulting data to a new topic, that a t2tf client can subscribe to.
+        # ---
 
         tracks = c2x_selection.tracks
         # transformer: tf.TransformerROS
@@ -168,14 +164,22 @@ def callback_tracking(data):
                 for box in a:  # all tracking boxes in the current association
                     temp.append(box.object_id)
                 ids.append(temp)  # ids is a list made up of lists of object ids
+                if len(a) > 1:
+                    # If a non-singleton cluster was found, print all ids that belong to it
+                    print("<<  Non-singleton Cluster: "+str(temp)+"  >>")
+            """
+            # The following is a block that just looks for id==100 in the clusters (which is the c2x id in maven-1/2.bag
             for cl_ids in ids:
                 if 100 in cl_ids:
                     if len(cl_ids) > 1:
                         print("<<  Non-singleton Cluster containing 100: "+str(cl_ids)+"  >>")
                     else:
                         print("<<  Singleton Cluster containing 100 found  >>")
+            """
         except ValueError:
+            # TODO find out what exactly causes this
             print("ValueError during t2ta")
+
         # --- debug:
         # print(str(data.header.stamp.secs)+" vs. "+str(c2x_selection.header.stamp.secs)+
         #      " --diff: "+str(np.abs(data.header.stamp.secs-c2x_selection.header.stamp.secs))+" !!!")
