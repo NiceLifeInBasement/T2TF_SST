@@ -1,22 +1,12 @@
 #!/usr/bin/env python
 """
-General main file that plots data from different sources.
+Similar to general_plot.py, but uses historic T2TA instead.
 
-In the listener function, select which callback you want for the tf data.
-The setup that works best so far is:
-    Use the callback_tf_static function for both tf subscribers (/tf and /tf_static).
-        This lets them simply add all their tfs to the tf object
-    Use the callback_c2x_tf function for the c2x subscriber
-        This function transforms the data with the most recently received tf data and then stores it in a list
-    Use the callback_tracking function for the tracker
-        Set inc_c2x to True, since none of the above functions plots the c2x data.
-        Set reset_tf to False, since the transform was done before storing c2x data
-        This function will then pick the c2x data that matches the timing of the lidar track and display it.
-        Since the c2x data that will be picked was already transformed with the tf data that was available when it was
-        received, it will match the lidar data
-
-If you want to plot everything from the callback_tracking, use callback_tf_append, if you dont want that use callback_tf
-and callback_tf_static
+This can play a bag file that includes multiple data sources and fuse them using T2TA approach that is incorporating
+history into association.
+The bag data is plotted as usual.
+Association results are printed to the commandline, but can of course also be published to a new topic or handed over
+to a fusion centre that then performs T2TF with the resulting data
 """
 
 import numpy as np
@@ -38,35 +28,28 @@ from tracking_consistency.similarity import *
 import os
 from general.t2t_history import *
 
-visuals = None  # TrackVisuals Object to be used for plotting data
-sim_checker = None  # SimilarityChecker Object to be used for comparing objects
-transforms = None  # Transformation Array
-c2x = []  # Array that is used to store all incoming c2x messages
-transformer = None  # tf.transformerROS object used to transform coordinates between frames
-tf_list = []  # List that can be used to store tf data for later use, CURRENTLY NOT IN USE
-src_id = "odom"  # transformations are performed FROM this frame
-dest_id = "ibeo_front_center"  # transformations are performed TO this frame
-inc_c2x = True  # Flag that determines whether the callback_tracking function should also include stored c2x data
+# --- Definiton of global variables
+#[...]
+
+# --- callback functions
 
 
 def callback_tracking(data):
     """
-    Plot data from the original laser scans
+    Plot data from the original laser scans and from the c2x scan to the visuals object and additionally perform
+    T2TA on this data, printing the results to the command line
     """
-    # Set inc_c2x to False if you want this function to just display data from the lidar tracking
-    # Set inc_c2x to True if you want this function to display c2x data on top of that, and perform t2ta between the
-    # two tracks
-
-    global visuals, lock, transforms, steps, c2x, inc_c2x
+    # insert the basic code like in general_plot.py here to display everything etc
+    # additionally, add the t2t_history code that updates the t2th object and calls the t2ta_historic code
+    global visuals, lock, transforms, steps, c2x, inc_c2x, history, t2ta_thresh, state_space, use_identity
     lock.acquire()
-    # c2x_selection = c2x_list[len(c2x_list)-1]  # Select the last c2x data
-
-    # Don't take the last received c2x, but instead take the c2x data that is closest to the current data (wrt time)
     c2x_selection = closest_match(c2x, data.header.stamp)
 
     visuals.plot_box_array(data.boxes, append=False)
+    # Append the current information to the history object
+    history.add("lidar_0", data.boxes)
 
-    if inc_c2x and c2x_selection is not None:
+    if c2x_selection is not None:
         # Also include c2x data in the plot
 
         # ---
@@ -127,14 +110,19 @@ def callback_tracking(data):
         # End of for going over tracks
         steps += 1  # c2x was used in another step, increase the counter
 
-        # Attempt to perform T2TA here
-        sensor_tracks = []
-        sensor_tracks.append(data.boxes)  # one sensor track is the data for this callback (=lidar tracking data)
-        sensor_tracks.append(tracks)  # The other one is the c2x tracking data
-
+        # Now to the T2TA with history:
         try:
-            assoc = t2ta.t2ta_collected(sensor_tracks, threshold=t2ta_thresh, distance=sim_fct)
-            # analyse the results
+            # generate object ids and sensor names
+            lidar_ids = []
+            c2x_ids = []
+            for obj in data.boxes:
+                lidar_ids.append(obj.object_id)
+            for obj in c2x_selection.tracks:
+                c2x_ids.append(obj.object_id)
+            obj_ids = [lidar_ids, c2x_ids]
+            sensor_names = ["lidar_0", "c2x_0"]
+            assoc = t2ta.t2ta_historic(obj_ids, sensor_names, t2ta_thresh, hist_size, history, time=-1,
+                                       state_space=state_space, use_identity=use_identity)
             ids = []  # this list will hold lists where each entry is an object id in a cluster
             for a in assoc:  # get a list of all associations
                 temp = []  # stores ids for one association
@@ -143,41 +131,29 @@ def callback_tracking(data):
                 ids.append(temp)  # ids is a list made up of lists of object ids
                 if len(a) > 1:
                     # If a non-singleton cluster was found, print all ids that belong to it
-                    print("<<  Non-singleton Cluster: "+str(temp)+"  >>")
-            """
-            # The following is a block that just looks for id==100 in the clusters (which is the c2x id in maven-1/2.bag
-            for cl_ids in ids:
-                if 100 in cl_ids:
-                    if len(cl_ids) > 1:
-                        print("<<  Non-singleton Cluster containing 100: "+str(cl_ids)+"  >>")
-                    else:
-                        print("<<  Singleton Cluster containing 100 found  >>")
-            """
+                    print("<<  Non-singleton Cluster: " + str(temp) + "  >>")
         except ValueError:
-            # TODO find out what exactly causes this
-            print("ValueError during t2ta")
+            print("ValueError during association")
 
-        # --- debug:
-        # print(str(data.header.stamp.secs)+" vs. "+str(c2x_selection.header.stamp.secs)+
-        #      " --diff: "+str(np.abs(data.header.stamp.secs-c2x_selection.header.stamp.secs))+" !!!")
-
-    # Finished all plotting, release the lock
     lock.release()
 
 
-def callback_c2x(data):
+def callback_tf_static(data):
     """
-    Store the last c2x message
+    Acquires static tf data and adds it to the transformer object.
     """
-    global transforms, visuals, c2x, steps
-    c2x.append(data)
-    steps = 0
+    global transformer
+    for tf_obj in data.transforms:
+        # Force time == 0 or you will run into issues TODO time==0 force here
+        tf_obj.header.stamp = rospy.Time(0)
+        transformer.setTransform(tf_obj)
 
 
 def callback_c2x_tf(data):
     """
     Stores the last c2x message, but transforms it beforehand
     """
+    global history, steps
     tracks = data.tracks
     # transformer: tf.TransformerROS
     for track in tracks:
@@ -208,76 +184,11 @@ def callback_c2x_tf(data):
     data.header.frame_id = dest_id
 
     c2x.append(data)
+    history.add("c2x_0", data.tracks)  # Add the data to the history object under the name c2x_0
     steps = 0
 
 
-def callback_tf(data):
-    """
-    Uses the tf package for the same operation as callback_tf_manual:
-    Append a newly acquired transform message to the list of stored transforms, and plot a c2x message if one was
-    recorded already.
-
-    TODO currently is just a test for a single object (since it just takes data.transforms[0]. requires generalization
-        can probably achieve this by simply adding the setTransform line in the tracks object? (since its 1 tf per car)
-    """
-    global transforms, steps, c2x, transformer, time_obj
-    c2x_selection = c2x[-1]
-    transforms.append(data)
-    tf_object = data.transforms[0]
-    # Force time == 0 or you will run into issues TODO time==0 force here
-    tf_object.header.stamp = rospy.Time(0)
-    transformer.setTransform(tf_object)  # set the data as the transform
-    if c2x_selection is None:
-        return
-    lock.acquire()
-
-    tracks = c2x_selection.tracks
-    seq = c2x_selection.header.seq
-
-    # transformer: tf.TransformerROS
-    for track in tracks:
-        time_obj = rospy.Time(0)
-        x_pos = track.box.center_x
-        y_pos = track.box.center_y
-        try:
-            head = SimulatedVehicle.create_def_header(frame_id=src_id)
-            # Don't use the current timestamp, use 0 to use the latest available tf data
-            head.stamp = rospy.Time(0)
-            # Try to transform the point
-            # Create a point with z=0 for the source frame (out of c2x tracks x/y) coordinate
-            point_pos = PointStamped(header=head, point=Point(x=x_pos, y=y_pos, z=0))
-            # Now transform the point using the data
-            tf_point_pos = transformer.transformPoint(target_frame=dest_id, ps=point_pos)
-            # Print/Visualize the point
-            # print("("+str(x_pos)+" | "+str(y_pos)+")  -->  ("+str(tf_point.point.x)+" | "+str(tf_point.point.y)+")")
-            next_point = (tf_point_pos.point.x, tf_point_pos.point.y, track.object_id, "y")
-            visuals.plot_points_tuple([next_point], append=True)
-        except tf.ExtrapolationException as e:
-            # Extrapolation error, print but keep going (possible just because only one frame was received so far)
-            print(e)
-    # End of for going over tracks
-    steps += 1  # c2x was used in another step, increase the counter
-    lock.release()
-
-
-def callback_tf_static(data):
-    """
-    Acquires static tf data and adds it to the transformer object.
-    """
-    global transformer
-    for tf_obj in data.transforms:
-        # Force time == 0 or you will run into issues TODO time==0 force here
-        tf_obj.header.stamp = rospy.Time(0)
-        transformer.setTransform(tf_obj)
-
-
-def callback_tf_append(data):
-    """
-    Acquires tf data, but does not yet set the transformer. instead this is appended to a list of tf data
-    """
-    global tf_list
-    for tf_obj in data.transforms:
-        tf_list.append(tf_obj)
+# --- listener and global stuff
 
 
 def listener():
@@ -315,7 +226,15 @@ def listener():
 
 if __name__ == '__main__':
     steps = 0  # how many steps passed since the last time the c2x message was used
+    src_id = "odom"  # transformations are performed FROM this frame
+    dest_id = "ibeo_front_center"  # transformations are performed TO this frame
+    c2x = []  # Array that is used to store all incoming c2x messages
     lock = thr.Lock()
+    history = TrackingHistory()
+    hist_size = rospy.Duration(0)
+    state_space = (True, False, False, False)  # use the usual state-space for now
+    use_identity = True
+
     transforms = []
     # Create a new Visualization object with the axis limits and "blue" as default plotting color
     visuals = TrackVisuals(limit=65, neg_limit=-40, limit_y=50, neg_limit_y=-40, color='b')
@@ -325,7 +244,7 @@ if __name__ == '__main__':
     sim_checker = SimilarityChecker(dist_mult=0.1, velo_add=0.4)
     # Select which similarity function should be used
     sim_fct = sim_checker.sim_position
-    t2ta_thresh = 8
+    t2ta_thresh = float("inf")
 
     # When playing maven-2.bag a passing car gets closer to the c2x track than its actual member - t2ta with history
     # would solve this problem, but the current "simple" similarity checker position-based function can't

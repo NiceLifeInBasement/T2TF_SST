@@ -5,14 +5,13 @@ Contains:
     t2tdistance functions that include history in their calculations
 
 All this needs to be used by the t2ta_historic function that is implemented in t2ta_algorithms.py
-
-TODO insert t2th class and two t2td functions (single time step and the one summing over it) along with helper funcs
 """
 import rospy
 import numpy
 from t2ta_algorithms import *
 from bob_perception_msgs.msg import *
 import sys
+
 
 class TrackingHistory:
     """
@@ -233,7 +232,15 @@ def closest_match(data, stamp):
     min_pos = 0  # position of the minimum
     for i in range(len(data)):  # use a counter var to store min position
         datapoint = data[i]  # select the current data point from the list
-        diff = datapoint.header.stamp - stamp
+        try:
+            diff = datapoint.header.stamp - stamp
+        except AttributeError:
+            # might have gotten TrackedOrientedBox objects instead of OrientedBox Objects, try again if that's the case
+            try:
+                diff = datapoint.box.header.stamp - stamp
+            except AttributeError as e:
+                raise e
+
         diff.secs = abs(diff.secs)
         diff.nsecs = abs(diff.nsecs)
         if diff < min_val:
@@ -283,3 +290,153 @@ def common_history(tracks):
             # increase the position counter that goes over all tracks
             pos += 1
     return adjusted_tracks
+
+
+def t2t_distance_historic(track_a, track_b, state_space=(True, False, False, True), use_identity=False):
+    """
+    Calculates the distance between two tracks, based on their history.
+    The tracks are passed as arrays of TrackedOrientedBoxes, and should (obviously) be ordered in the same way (i.e.
+    both have the newest tracking as first/last etc)
+
+    The tracks don't NEED to have the same length, if they don't have the same length the common_history function will
+    be used to reduce the size of the longer and create two tracks that fit to each other wrt time.
+
+    This is according to https://hal.archives-ouvertes.fr/hal-00740787/document, where this function is called D
+    :param track_a: The first track in the form of an array of TrackedOrientedBoxes, where every box represents the
+    object at a single time step.
+    :param track_b: The second track in the form of an array of TrackedOrientedBoxes, where every box represents the
+    object at a single time step.
+    :param state_space: A vector describing which parameters should be used as the state space. Defaults to position+
+    velocity. (Position - angle - length/width - velocity) as booleans
+    :param use_identity: Boolean flag to determine whether to use the identity matrix for covariance matrices. Even if
+    set to false, unless all True entries in the state space parameter have matching covariance entries in both tracks,
+    the identity will be used
+    :return: A float representing the distance between the two tracks.
+    """
+    if len(track_a) != len(track_b):
+        # build a common history for track_a and track_b
+        common_tracks = common_history([track_a, track_b])
+        track_a = common_tracks[0]
+        track_b = common_tracks[1]
+
+    distance = 0
+    for i in range(len(track_a)):
+        distance += t2t_distance_box(box_a=track_a[i], box_b=track_b[i], state_space=state_space,
+                                     use_identity=use_identity)
+
+    # Perform averaging (i.e. the multiplication with 1/n in the formula in the paper)
+    distance /= len(track_a)
+    # print(distance)
+    return distance
+
+
+def t2t_distance_box(box_a, box_b, state_space=(True, False, False, True), use_identity=False):
+    """
+    Calculates the distance between two tracks at a single time step. This should be used in conjunction with the
+    t2t_distance_historic function, which calls this function for every single time step.
+
+    The tracks are passed as TrackedOrientedBoxes.
+
+    This is according to https://hal.archives-ouvertes.fr/hal-00740787/document, where this function is called d
+    :param box_a: The first track in the form of a TrackedOrientedBox.
+    :param box_b: The second track in the form of a TrackedOrientedBox.
+    :param state_space: A vector describing which parameters should be used as the state space. Defaults to position+
+    velocity. (Position - angle - length/width - velocity) as booleans
+    :param use_identity: Boolean flag to determine whether to use the identity matrix for covariance matrices. Even if
+    set to false, unless all True entries in the state space parameter have matching covariance entries in both tracks,
+    the identity will be used
+    :return: A float representing the distance between the two tracks
+    """
+    # ---
+    # NOTATION
+    # X_a is the state estimate for track a
+    # X_b is the state estimate for track b
+    # P_a is the covariance matrix for track a
+    # P_b is the covariance matrix for track b
+    # dim is the dimension of the state space, covariance matrices are of dimension "dim x dim"
+    # ---
+
+    # Calculate the dimension of all the matrices that will be used
+    dim = 0
+    if state_space[0]:
+        dim += 2
+    if state_space[1]:
+        dim += 1
+    if state_space[2]:
+        dim += 2
+    if state_space[3]:
+        dim += 2
+
+    # Check for covariance data. If no covariance data is given for either track, or the covariance does not
+    # match the required state space, then both covariance matrices will be set to the identity matrix
+    # For this, check that for every all "True" entries in the state space vector, both tracks have a covariance entry
+
+    if state_space[0]:
+        if (not box_a.box.covariance_center) or (not box_b.box.covariance_center):
+            use_identity = True
+    if state_space[1]:
+        if (not box_a.box.covariance_angle) or (not box_b.box.covariance_angle):
+            use_identity = True
+    if state_space[2]:
+        if (not box_a.box.covariance_length_width) or (not box_b.box.covariance_length_width):
+            use_identity = True
+    if state_space[3]:
+        if (not box_a.box.covariance_velocity) or (not box_b.box.covariance_velocity):
+            use_identity = True
+
+    # Now, determine the covariance matrix
+    if use_identity:
+        # use identity for covariance matrices
+        P_a = np.eye(dim, dim)
+        P_b = np.eye(dim, dim)
+    else:
+        # extract covariance matrices from the tracks
+        # TODO insert covariance matrix extraction here, currently this does not support use_identity=False
+        pass
+
+    # Now, determine the state estimates as given by the matrix
+    X_a = []
+    X_b = []
+
+    if state_space[0]:  # Append the position to the state estimate
+        X_a.append(box_a.box.center_x)
+        X_a.append(box_a.box.center_y)
+        X_b.append(box_b.box.center_x)
+        X_b.append(box_b.box.center_y)
+    if state_space[1]:  # Append the angle to the state estimate
+        X_a.append(box_a.box.angle)
+        X_b.append(box_b.box.angle)
+    if state_space[2]:  # Append length and width of the box to the state estimate
+        X_a.append(box_a.box.length)
+        X_a.append(box_a.box.width)
+        X_b.append(box_b.box.length)
+        X_b.append(box_b.box.width)
+    if state_space[3]:  # Append the velocity to the state estimate
+        X_a.append(box_a.box.velocity_x)
+        X_a.append(box_a.box.velocity_y)
+        X_b.append(box_b.box.velocity_x)
+        X_b.append(box_b.box.velocity_y)
+    # Convert these array to numpy arrays for further calcs
+    X_a = np.array(X_a)
+    X_b = np.array(X_b)
+    # Successfully built a state estimate for both tracks with the correct dimension
+
+    # Now, calculate the distance between the two tracks based on that according to the formula from the paper
+    # this is split up to prevent stacking too many numpy operations
+
+    part_1 = np.subtract(X_a, X_b)
+    part_3 = np.copy(part_1)
+    part_1 = np.transpose(part_1)
+
+    part_2 = np.dot(P_a, P_b)
+    part_2 = np.linalg.inv(part_2)
+
+    # using det calc for the |Pa+Pb| calculation, since everything doesn't really make sense shape-wise
+    part_4 = np.log(np.linalg.det(np.add(P_a, P_b)))
+
+    distance = np.dot(part_1, part_2)
+    distance = np.dot(distance, part_3)
+    # TODO consider testing adding an if for the following (if not use_identity:)
+    distance = np.add(distance, part_4)
+
+    return distance

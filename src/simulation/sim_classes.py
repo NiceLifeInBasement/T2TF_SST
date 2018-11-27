@@ -329,7 +329,7 @@ class SimulatedVehicle:
         cov_list = [nan for x in range(49)]
         # Start with 49 nan entries, now just need to fill in the values at the correct position
 
-        # TODO currently just dealing with the default case (pos+vel cov.) and throwning an error else
+        # TODO currently just dealing with the default case (pos+vel cov.) and throwing an error else
         if (var_pos is not None) and (var_angle is None) and (var_lw is None) and (var_vel is not None):
             # Default case
             pass  # Here, insert values at their default (correct) positions

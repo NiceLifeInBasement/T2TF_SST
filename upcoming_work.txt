@@ -85,7 +85,8 @@ REAL DATA
 		POSSIBLE SOLUTION: history_size is a rospy.Duration object, and instead of taking into account the amount of steps
 				all steps going back until this time are taken.
 				This would require a second processing step, because the resulting arrays will be of different sizes.
-				Therefore, in this second step 
+				Therefore, in this second step all arrays need to be reduced to the size of the smallest one, by
+				picking the time steps from them that match the ones in the smallest array (or are closest)
 
 	perform t2ta on the second data set (maven-2.bag)
 
