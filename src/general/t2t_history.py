@@ -137,6 +137,7 @@ class TrackingHistory:
 
         historic_tracks = []  # The list of tracks including the history that will be returned
         sensor_tracks = self.data[sensor_id]  # All tracks of this sensor
+
         for i in range(hist_size):
             # go over all positions in the tracking array that fit the parameters
             measurement = sensor_tracks[time-i]  # Acquire the measurement for this time step
@@ -217,6 +218,51 @@ class TrackingHistory:
                 break
 
         return historic_tracks
+
+    def get_timestep(self, object_id, sensor_name, time, hist_size=rospy.Duration(0)):
+        """
+        Analogue to get_timed, but using the time parameter to determine the starting position based on a Timestamp
+        :param object_id: The object_id of the vehicle to be analyzed
+        :param sensor_name: The name of the sensor that tracked the vehicle to be analyzed
+        :param time: A timestamp that will be used to acquire a numerical time step that will then be used to acquire
+        the data
+        :param hist_size: A rospy.Duration that specifies how far into the past this should go. If time is Duration(0)
+        (the default value), then only the measurement at time step "time" will be returned (still in array though!)
+        :return: A list of TrackedOrientedBoxes for this set of identification parameters. The first object in this list
+        will be the most recent one, and the last object in the list will be the one that was measured first (respecting
+        the history size and the given time index). The size of this is determined by hist_size, so that the first and
+        last object are at most hist_size (which is a rospy.Duration object) time apart.
+        """
+        # the way this works is as follows:
+        #   find a numerical time step in the data that matches the stamp most closely
+        #   (this is the index of the data with the timestep that matches the given stamp most closely)
+        #   acquire this sensors relative data using the self.get_timed function
+        # return this object
+        numerical_time = 0  # The value that this is looking for, init with 0
+
+        time_step = -1  # Init value for time step counter
+        sensor_data = self.data[self.sensor_id_list.index(sensor_name)]
+
+        min_stamp = rospy.Duration(99999999, 0)  # init value is a very long duration, so that the first comp is smaller
+
+        for time_track in sensor_data:  # iterate over all timings
+            time_step += 1  # Increase the time step counter
+            for datapoint in time_track:
+                if datapoint.object_id == object_id:
+                    try:
+                        diff = datapoint.box.header.stamp - time
+                    except AttributeError as e:
+                        raise e  # Could also handle the error if you want to be robust
+
+                    diff.secs = abs(diff.secs)
+                    diff.nsecs = abs(diff.nsecs)
+                    if diff < min_stamp:
+                        min_stamp = diff
+                        numerical_time = time_step
+
+        # Use this to acquire the data in the usual way and return that
+        result = self.get_timed(object_id, sensor_name, numerical_time, hist_size)
+        return result
 
 
 def closest_match(data, stamp):
@@ -326,7 +372,7 @@ def t2t_distance_historic(track_a, track_b, state_space=(True, False, False, Tru
 
     # Perform averaging (i.e. the multiplication with 1/n in the formula in the paper)
     distance /= len(track_a)
-    # print(distance)
+
     return distance
 
 
@@ -423,20 +469,23 @@ def t2t_distance_box(box_a, box_b, state_space=(True, False, False, True), use_i
 
     # Now, calculate the distance between the two tracks based on that according to the formula from the paper
     # this is split up to prevent stacking too many numpy operations
-
     part_1 = np.subtract(X_a, X_b)
     part_3 = np.copy(part_1)
     part_1 = np.transpose(part_1)
 
-    part_2 = np.dot(P_a, P_b)
+    part_2 = np.add(P_a, P_b)
     part_2 = np.linalg.inv(part_2)
 
     # using det calc for the |Pa+Pb| calculation, since everything doesn't really make sense shape-wise
+    # im not 100% sure what the | | imply
     part_4 = np.log(np.linalg.det(np.add(P_a, P_b)))
 
     distance = np.dot(part_1, part_2)
     distance = np.dot(distance, part_3)
     # TODO consider testing adding an if for the following (if not use_identity:)
     distance = np.add(distance, part_4)
+
+    # if box_b.object_id == 496:
+    #    print("IDS:" + str(box_a.object_id)+"@"+str(box_a.box.header.stamp) + " & " + str(box_b.object_id)+"@"+str(box_b.box.header.stamp)+"\td: "+str(distance))
 
     return distance

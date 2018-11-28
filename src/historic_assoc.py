@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 """
 Similar to general_plot.py, but uses historic T2TA instead.
 
@@ -28,12 +29,11 @@ from tracking_consistency.similarity import *
 import os
 from general.t2t_history import *
 
+
 # --- Definiton of global variables
-#[...]
+# [...]
 
 # --- callback functions
-
-
 def callback_tracking(data):
     """
     Plot data from the original laser scans and from the c2x scan to the visuals object and additionally perform
@@ -73,33 +73,7 @@ def callback_tracking(data):
             length = track.box.length
             width = track.box.width
             try:
-                # Try to transform the point
-                # Create a point_pos with z=0 for the source frame (out of c2x tracks x/y) coordinate
-                src_f_id = c2x_selection.header.frame_id  # Don't use the global var, instead use the set value
-                head = SimulatedVehicle.create_def_header(frame_id=src_f_id)
-                # Don't use the current timestamp, use 0 to use the latest available tf data
-                head.stamp = rospy.Time(0)
-                # The above line allows for tf outside this function and prevents performing multiple tf steps
-                point_pos = PointStamped(header=head, point=Point(x=x_pos, y=y_pos, z=0))
-                point_vel = PointStamped(header=head, point=Point(x=x_vel, y=y_vel, z=0))
-                # check x/y for the length/width point? might depend on angle and not be this easy
-                point_lw = PointStamped(header=head, point=Point(x=width, y=length, z=0))
-                # Now transform the point using the data
-                tf_point_pos = transformer.transformPoint(target_frame=dest_id, ps=point_pos)
-                tf_point_vel = transformer.transformPoint(target_frame=dest_id, ps=point_vel)
-                tf_point_lw = transformer.transformPoint(target_frame=dest_id, ps=point_lw)
-
-                # Store the results back in the track for further use
-                track.box.center_x = tf_point_pos.point.x
-                track.box.center_y = tf_point_pos.point.y
-                track.box.velocity_x = tf_point_vel.point.x
-                track.box.velocity_y = tf_point_vel.point.y
-                # For the following 2, check x/y and if tf them like this makes sense at all
-                track.box.length = tf_point_lw.point.y
-                track.box.width = tf_point_lw.point.x
-
-                # Plotting of the newly transformed point
-                next_point = (tf_point_pos.point.x, tf_point_pos.point.y, track.object_id, "y")
+                next_point = (x_pos, y_pos, track.object_id, "y")
                 visuals.plot_points_tuple([next_point], append=True)
             except tf.ExtrapolationException as e:
                 # Extrapolation error, print but keep going (possible just because only one frame was received so far)
@@ -120,8 +94,12 @@ def callback_tracking(data):
             for obj in c2x_selection.tracks:
                 c2x_ids.append(obj.object_id)
             obj_ids = [lidar_ids, c2x_ids]
+
             sensor_names = ["lidar_0", "c2x_0"]
-            assoc = t2ta.t2ta_historic(obj_ids, sensor_names, t2ta_thresh, hist_size, history, time=-1,
+
+            # Data acquisition from the history object should be based on the most recently received objects stamp
+            timing = data.boxes[0].box.header.stamp
+            assoc = t2ta.t2ta_historic(obj_ids, sensor_names, t2ta_thresh, hist_size, history, time=timing,
                                        state_space=state_space, use_identity=use_identity)
             ids = []  # this list will hold lists where each entry is an object id in a cluster
             for a in assoc:  # get a list of all associations
@@ -132,8 +110,11 @@ def callback_tracking(data):
                 if len(a) > 1:
                     # If a non-singleton cluster was found, print all ids that belong to it
                     print("<<  Non-singleton Cluster: " + str(temp) + "  >>")
+                    pass
         except ValueError:
             print("ValueError during association")
+        except IndexError:
+            print("IndexError during association, likely because not enough data was received yet.")
 
     lock.release()
 
@@ -142,35 +123,63 @@ def callback_tf_static(data):
     """
     Acquires static tf data and adds it to the transformer object.
     """
-    global transformer
+    global transformer, odom_frame, ibeo_frame
     for tf_obj in data.transforms:
         # Force time == 0 or you will run into issues TODO time==0 force here
         tf_obj.header.stamp = rospy.Time(0)
         transformer.setTransform(tf_obj)
+
+        # Store two of the transform to acquire a constant translation and the rotation necessary for the two frames
+        # IDEA WAS:
+        #    create a new frame that can be used to transform by rotation without translation
+        if tf_obj.header.frame_id == "odom":
+            odom_frame = tf_obj
+        if tf_obj.child_frame_id == "ibeo_front_center":
+            ibeo_frame = tf_obj
+        if odom_frame is not None and ibeo_frame is not None and dest_id_vel != dest_id:
+            vel_frame = ibeo_frame
+            vel_frame.transform.translation = odom_frame.transform.translation
+            vel_frame.child_frame_id = dest_id_vel
+            vel_frame.header.frame_id = "odom"
+            transformer.setTransform(vel_frame)
 
 
 def callback_c2x_tf(data):
     """
     Stores the last c2x message, but transforms it beforehand
     """
-    global history, steps
+    global history, steps, constant_velo
     tracks = data.tracks
+    head = SimulatedVehicle.create_def_header(frame_id=src_id)
     # transformer: tf.TransformerROS
     for track in tracks:
         time_obj = rospy.Time(0)
         x_pos = track.box.center_x
         y_pos = track.box.center_y
+        x_vel = track.box.velocity_x
+        y_vel = track.box.velocity_y
         try:
             # Try to transform the point
             # Create a point with z=0 for the source frame (out of c2x tracks x/y) coordinate
-            point = PointStamped(header=SimulatedVehicle.create_def_header(frame_id=src_id),
+            point = PointStamped(header=head,
                                  point=Point(x=x_pos, y=y_pos, z=0))
+            point_vel = PointStamped(header=head, point=Point(x=x_vel, y=y_vel, z=0))
             # Don't use the current timestamp, use 0 to use the latest available tf data
             point.header.stamp = rospy.Time(0)
             # Now transform the point using the data
             tf_point = transformer.transformPoint(target_frame=dest_id, ps=point)
-            track.box.center_x = tf_point.point.x
-            track.box.center_y = tf_point.point.y
+            tf_point_vel = transformer.transformPoint(target_frame=dest_id_vel, ps=point_vel)
+
+            # Use the steps variable and the velocity to manipulate the position of the object depending on the time
+            # it has been seen but not updated by a new message (i.e. "steps")
+            # TODO currently, instead of steps, this uses constant_velo. Works, but doesn't fit the purpose
+            # TODO transforming the velocity doesn't really work, so im using the original velocity
+            track.box.center_x = tf_point.point.x + constant_velo * point_vel.point.x
+            track.box.center_y = tf_point.point.y + constant_velo * point_vel.point.y
+
+            # DEBUG
+            # print(str(track.box.center_x)+"\t"+str(track.box.center_y))
+            # print("steps: "+str(steps)+"\tvelx: "+str(point_vel.point.x)+" vely: "+str(point_vel.point.y))
         except tf.ExtrapolationException as e:
             # Extrapolation error, print but keep going (possible just because only one frame was received so far)
             print(e)
@@ -178,7 +187,7 @@ def callback_c2x_tf(data):
             # print("Connectivity Exception during transform")
             print(e)
         except tf.LookupException as e:
-            print("Lookup exception")
+            print(e)
             pass
     # Now change the frame_id to dest_id, since the tf was already performed
     data.header.frame_id = dest_id
@@ -195,7 +204,9 @@ def listener():
     """
     Prepare the subscribers and setup the plot etc
     """
-    global visuals, transformer
+    global visuals, transformer, odom_frame, ibeo_frame
+    odom_frame = None
+    ibeo_frame = None
     rospy.init_node('listener_laser_scan', anonymous=True)
 
     transformer = tf.TransformerROS(True)
@@ -214,7 +225,7 @@ def listener():
         fname = sys.argv[1]  # Get the filename
         # now start a rosbag play for that filename
 
-        FNULL = open(os.devnull, 'w')
+        FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
         player_proc = subprocess.Popen(['rosbag', 'play', fname], cwd="data/", stdout=FNULL)
 
     plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
@@ -228,11 +239,14 @@ if __name__ == '__main__':
     steps = 0  # how many steps passed since the last time the c2x message was used
     src_id = "odom"  # transformations are performed FROM this frame
     dest_id = "ibeo_front_center"  # transformations are performed TO this frame
+    dest_id_vel = "ibeo_front_center"
     c2x = []  # Array that is used to store all incoming c2x messages
     lock = thr.Lock()
     history = TrackingHistory()
-    hist_size = rospy.Duration(0)
-    state_space = (True, False, False, False)  # use the usual state-space for now
+    # hist_size = rospy.Duration(0) => history will be only 1 track (i.e. no history)
+    # hist size Duration(4) causes significant lag already!
+    hist_size = rospy.Duration(1)
+    state_space = (True, False, False, False)  # usual state space: (TFFT), only pos: (TFFF)
     use_identity = True
 
     transforms = []
@@ -241,10 +255,11 @@ if __name__ == '__main__':
 
     # define a similarity function for t2ta
     # Init the similarity checker that provides the similarity function
-    sim_checker = SimilarityChecker(dist_mult=0.1, velo_add=0.4)
-    # Select which similarity function should be used
-    sim_fct = sim_checker.sim_position
-    t2ta_thresh = float("inf")
+
+    t2ta_thresh = 20
+
+    # arbitrary value that is multiplied with velocity to acquire the position of the c2x objects
+    constant_velo = -0.2
 
     # When playing maven-2.bag a passing car gets closer to the c2x track than its actual member - t2ta with history
     # would solve this problem, but the current "simple" similarity checker position-based function can't

@@ -240,7 +240,7 @@ def t2ta_collected(tracks, threshold, distance):
     return cluster_list
 
 
-def t2ta_historic(obj_ids, sensor_names, threshold, history_size, history, time=-1,
+def t2ta_historic(obj_ids, sensor_names, threshold, history_size, history, time,
                   state_space=(True, False, False, True), use_identity=True):
     """
     Performs track to track association using a distance function that is based on historic data that is extracted from
@@ -255,8 +255,8 @@ def t2ta_historic(obj_ids, sensor_names, threshold, history_size, history, time=
     association should go
     :param history: A TrackingHistory object that contains the historic tracks for the objects that should be fused
     :type history: TrackingHistory
-    :param time: The time step at which the analysis should begin. Defaults to -1, which means the most recent time
-    step should be used.
+    :param time: The time step at which the analysis should begin as a rospy.Time object
+    :type time: rospy.Time object
     :param state_space: The state space vector of booleans that determines which of the entries (pos, angle, l/w, velo)
     should be used by the association function
     :param use_identity: Boolean that is passed to the association function that determines whether all covariance
@@ -279,7 +279,7 @@ def t2ta_historic(obj_ids, sensor_names, threshold, history_size, history, time=
         next_obj_id_list = obj_ids[i]
         for next_obj_id in next_obj_id_list:
             # Acquire a single track (use [0] at the end, because the function returns a list containing 1 object)
-            next_single_track = history.get_absolute(next_obj_id, next_sensor_name, time=time, hist_size=1)[0]
+            next_single_track = history.get_timestep(next_obj_id, next_sensor_name, time=time, hist_size=rospy.Duration(0))[0]
             # Append this tracks to the list of tracks relevant for its sensor
             tracks[i].append(next_single_track)
 
@@ -292,7 +292,7 @@ def t2ta_historic(obj_ids, sensor_names, threshold, history_size, history, time=
         next_obj_id_list = obj_ids[i]
         for next_obj_id in next_obj_id_list:
             # Acquire a track of a single vehicle over multiple time steps
-            next_single_track = history.get_timed(next_obj_id, next_sensor_name, time=time, hist_size=history_size)
+            next_single_track = history.get_timestep(next_obj_id, next_sensor_name, time=time, hist_size=history_size)
             # Append this tracks to the list of tracks relevant for its sensor
             historic_tracks[i].append(next_single_track)
 
