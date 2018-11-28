@@ -90,7 +90,7 @@ def callback_tracking(data):
             length = track.box.length
             width = track.box.width
             try:
-                # Try to transform the point
+                # Try to transform the point TODO shouldn't be necessary if done in the c2x_callback
                 # Create a point_pos with z=0 for the source frame (out of c2x tracks x/y) coordinate
                 src_f_id = c2x_selection.header.frame_id  # Don't use the global var, instead use the set value
                 head = SimulatedVehicle.create_def_header(frame_id=src_f_id)

@@ -132,6 +132,8 @@ def callback_tf_static(data):
         # Store two of the transform to acquire a constant translation and the rotation necessary for the two frames
         # IDEA WAS:
         #    create a new frame that can be used to transform by rotation without translation
+        # The following does not work. I assume this is because it skips steps in the tf tree, and therefore messes up
+        # the translation/rotation of the frames relative to each other
         if tf_obj.header.frame_id == "odom":
             odom_frame = tf_obj
         if tf_obj.child_frame_id == "ibeo_front_center":
@@ -169,6 +171,8 @@ def callback_c2x_tf(data):
             # Now transform the point using the data
             tf_point = transformer.transformPoint(target_frame=dest_id, ps=point)
             tf_point_vel = transformer.transformPoint(target_frame=dest_id_vel, ps=point_vel)
+
+            # TODO instead of using transformPoint, see if you can manually get a transformation for this going?
 
             # Use the steps variable and the velocity to manipulate the position of the object depending on the time
             # it has been seen but not updated by a new message (i.e. "steps")
@@ -245,7 +249,7 @@ if __name__ == '__main__':
     history = TrackingHistory()
     # hist_size = rospy.Duration(0) => history will be only 1 track (i.e. no history)
     # hist size Duration(4) causes significant lag already!
-    hist_size = rospy.Duration(1)
+    hist_size = rospy.Duration(0, 500000000)  # .5 secs
     state_space = (True, False, False, False)  # usual state space: (TFFT), only pos: (TFFF)
     use_identity = True
 

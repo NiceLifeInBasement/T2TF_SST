@@ -14,11 +14,10 @@ SIMULATION OF DATA
 		
 
 REAL DATA
-	consider testing if you can tf data from the point cloud before showing it in rviz
-		(laser scan data with a point cloud that you rebulish to view it in rviz)
-		or change some rviz setting for the transforms
-
-		--> changed the fixed_frame in rviz or the point cloud header before publishing doesnt work
+	c2x data and lidar data is coming in at completly different rates apparantly
+		disabling the graphic display doesn't change that
+		this means lidar data will be coming in for quite some time after the last c2x transmission
+	-->	so the current implementation (store all c2x data and then grab it by time stamp later) is absolutly necessary
 
 	possible issue: "rotation" of velocity? maybe need to use some other conversion method of points
 		currently using transformPoint() but that only takes x/y/z (setting z=0)
@@ -32,64 +31,42 @@ REAL DATA
 		can maybe just treat them like point coordinates? since its all just x/y data anyway...
 			that should work!? 
 		--> currently implemented this like this, but for length/width this is problematic I think
-
+	!	THIS DOESNT WORK, YOU NEED TO FIND A DIFFERENT WAY THAN WHATS CURRENTLY HAPPENING
+		Velocity transformation only depends on frame rotation, but not translation, but tf is also doing translation
+			"https://answers.ros.org/question/205503/linear-velocity-transformation-in-ros/"
+			SOL: create your own coordinate frame with same origin as odom but rotation = rotation of ibeo_front_center
+			then you will only rotate, but not translate
+			ISSUE: thats not that easy, because the two frames are not directly connected in the tf tree
+			
+		
 	c2x vehicle display is not working correctly (jumping around etc)
 		probably due to the low frequency of incoming c2x data
 	!	might need something like a constant velo model to accomodate for the low freq
 			take into account age+velocity of the car (probably with a small multiplicative factor to reduce impact)
 				
 		--> implemented some basic fixes, but its still not up to date compared to the lidar data		
-
-	implement t2tdistance with history 
-		it requires covariance data. however you can simply implement something that uses the identity matrix as cov unless
-		covariance is given for both tracks - you would still gain something from taking history into account
-			automatically check for this before computing the distance
-		implement a class that allows storing OrientedBoxes for the history:
-			- take into account: object id, sensor source(unique id), timestep (numerical) to identify which box should
-			  be returned
-			- should be able to return an array of boxes for a timestep, history size, object id, sensor source id
-				This array contains all trackedboxes from time "timestep-history_size" to time "timestep" that 
-				belong to this object id and sensor souce i
-				kwarg history_size=1, with history_size=1 only return the box for the current timestep
-			- ??: if timestep=-1: start with the most recent data
-				issue: what if different tracks have different #datapoints? start with the most recent one for all of
-				them, and go back individually? (probably, could also take the most recent one as fixed start point
-				for the rest)
-		since we have to deal with history loss, the length of the used history should be:
-				min(wanted_history_size, history_size_A, history_size_B)	
-				where:  wanted_history_size is the history size n as described in the paper
-					history_size_X is the total number of historical tracks of object X
-				i.e. take as much history as possible without going over history size n
-				this check needs to be done outside the t2thistory object, since that one returns for a single id
-		t2t_distance function should take the finished arrays that were acquired from the class
-			its possible that the t2ta algorithm needs to be duplicated - the current algorithm associates multiple box[]
-			but doesnt have a way to distinguish between sources - therefore it can't acquire the history data
-			would need a source identifier for each array (object id is in the track) and probably a timestep
-			can also take timestep=-1 to always use the most recent one
-				if you use this to grab orientedboxes this might be an issue
-			I think it can work on the same function by adding some kwargs that specify sensor sources etc
-				need a consistant naming of sensors across functions (c2x_0, lidar_0?)
-				need to do all the extraction from the history data in the t2ta algorithm
-				might need to pass the t2thistory object to the t2ta algorithm aswell
-			could end up being a lot of clutter in the (currently very clean/minimalistic) t2ta algo
-				consider beginning by duplicating it and implementing a second version with the history feature	
-			t2td function should take arbitrary state space vectors into account 
-				maybe assume that if NaN is given, the field is discarded in both state vectors
-				(for the t2td dist calc)
-				downside of this: nan makes merging of vectors later on harder
-				upside: can identify given and missing fields without further parameters			
-	!	ISSUE:  non-synced data coming in will cause issues if the history size gets bigger, since the data points that get
-			matched against each other will not be from the same real time
-				example: 1 c2x point per 5 lidar points:
-				History size of 5 will cause 
-		POSSIBLE SOLUTION: history_size is a rospy.Duration object, and instead of taking into account the amount of steps
-				all steps going back until this time are taken.
-				This would require a second processing step, because the resulting arrays will be of different sizes.
-				Therefore, in this second step all arrays need to be reduced to the size of the smallest one, by
-				picking the time steps from them that match the ones in the smallest array (or are closest)
+		TEST/IMPROVE constant velocity model to manipulate the coordinates
 
 	perform t2ta on the second data set (maven-2.bag)
+		--> doing this, works fine (better than the old approach, for example when using size(history)==1 (=> Duration(0))
+		--> after adding in a simple constant velocity model, it works even better and also works good for larger hist sizes
+		only in 1 szenario (of the whole 2.5min bag) did an association fail (~id 5323)
+
+	analyze the issue that bigger history sizes cause worse results in some cases
+		and also maybe check if you can improve the performance a bit, with bigger history it causes huge lag
+
+	consider changing the visualization so that instead of plotting directly, the data is just merged at a fusion center and
+	then published to a new topic. A second node can then subscribe to this topic and simply display ALL information from
+	the topic
+		topic could have its own msg format, that simply includes an array of tuples that match what visuals needs
+		(i.e. (x,y,id,color))
+		so msg would just be header+points, with points being an array of x+y+id+color (which in itself should probably be
+		a second msg definition)
+		this would also allow you to store bagfiles of results
 
 	consider adding in (/testing) the following change to the t2td(with history) function:
-		instead of averaging over all time points included in the history, weight the more recent ones higher
+	1.	instead of averaging over all time points included in the history, weight the more recent ones higher
 		need to think about a weighting and how much sense this makes
+	2.	a dynamic threshold, that slowly increases as long as no object match was found, and decreases while objects are 
+		matched 
+

@@ -360,7 +360,7 @@ def t2t_distance_historic(track_a, track_b, state_space=(True, False, False, Tru
     :return: A float representing the distance between the two tracks.
     """
     if len(track_a) != len(track_b):
-        # build a common history for track_a and track_b
+        # build a common history for track_a and track_b if the tracks do not match in size
         common_tracks = common_history([track_a, track_b])
         track_a = common_tracks[0]
         track_b = common_tracks[1]
@@ -485,6 +485,7 @@ def t2t_distance_box(box_a, box_b, state_space=(True, False, False, True), use_i
     # TODO consider testing adding an if for the following (if not use_identity:)
     distance = np.add(distance, part_4)
 
+    # DEBUG
     # if box_b.object_id == 496:
     #    print("IDS:" + str(box_a.object_id)+"@"+str(box_a.box.header.stamp) + " & " + str(box_b.object_id)+"@"+str(box_b.box.header.stamp)+"\td: "+str(distance))
 
