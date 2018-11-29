@@ -72,6 +72,7 @@ REAL DATA
 		not sure how much impact that has, but it def. is far from optimal atm.
 
 	work on profiling to see what exactly is causing lag etc
+		np.linalg.inv is something I have seen multiple times already
 
 GENERAL IMPROVEMENTS 
 	consider changing the visualization so that instead of plotting directly, the data is just merged at a fusion center and
