@@ -14,12 +14,7 @@ SIMULATION OF DATA
 		
 
 REAL DATA
-	c2x data and lidar data is coming in at completly different rates apparantly
-		disabling the graphic display doesn't change that
-		this means lidar data will be coming in for quite some time after the last c2x transmission
-	-->	so the current implementation (store all c2x data and then grab it by time stamp later) is absolutly necessary
-
-	possible issue: "rotation" of velocity? maybe need to use some other conversion method of points
+!	issue: "rotation" of velocity? maybe need to use some other conversion method of points
 		currently using transformPoint() but that only takes x/y/z (setting z=0)
 		might need to rotate manually anyway? or look through the other functions (transformPose(), lookupTwist()?)
 			could use lookupTwist() and give this twist the velocity data
@@ -37,24 +32,48 @@ REAL DATA
 			SOL: create your own coordinate frame with same origin as odom but rotation = rotation of ibeo_front_center
 			then you will only rotate, but not translate
 			ISSUE: thats not that easy, because the two frames are not directly connected in the tf tree
-			
+		https://math.stackexchange.com/questions/40164/how-do-you-rotate-a-vector-by-a-unit-quaternion
+			this could work
+			the question is what the quaternion you use to rotate is
+				maybe you can rotate using both (get to fixed frame, then to new frame)
+				unless the quaternions in tf are relative to the their parent coord frames (which I assume)
+					then you would need to perform rotations along the tf tree (odom->imu->base_link->ibeo_fc)
 		
 	c2x vehicle display is not working correctly (jumping around etc)
 		probably due to the low frequency of incoming c2x data
-	!	might need something like a constant velo model to accomodate for the low freq
+		might need something like a constant velo model to accomodate for the low freq
 			take into account age+velocity of the car (probably with a small multiplicative factor to reduce impact)
 				
 		--> implemented some basic fixes, but its still not up to date compared to the lidar data		
 		TEST/IMPROVE constant velocity model to manipulate the coordinates
-
-	perform t2ta on the second data set (maven-2.bag)
-		--> doing this, works fine (better than the old approach, for example when using size(history)==1 (=> Duration(0))
-		--> after adding in a simple constant velocity model, it works even better and also works good for larger hist sizes
-		only in 1 szenario (of the whole 2.5min bag) did an association fail (~id 5323)
+		--> Implemented a way to add "fake data" to the list of c2x data, that includes a manipulated timestamp and position.
+		    This essentially produces data for the time steps where no c2x data was produced.
+			Fine tuning for the velocity is necessary, also the velocity rotation issue is impacting this obvs.
+			currently, using a negative factor produces better results than a positive one (implying rotation issues) 
 
 	analyze the issue that bigger history sizes cause worse results in some cases
 		and also maybe check if you can improve the performance a bit, with bigger history it causes huge lag
 
+	re: creation of fake data to fill time steps where no c2x data was received:
+	currently, timing and number of fake data points are fixed (+4 points with 0.04 sec delay between)
+	you could also base this on the timing diff between the last "real" c2x data that was received and the new data
+	formula would be~:
+		time_diff = 0.2  # This is the case for the "normal" transmission rate of 5Hz
+		# Calc time_diff from the data
+		no_points = 5  # This could be a constant
+		add_points = no_points - 1
+		time_shift = time_diff/no_points
+		# add_points and time_shift are the two variables used in the code 
+	You could also add these points "into the past" which would let you calc time_diff accuratly
+	Big Downside: Would be based on the assumption that c2x data actually arrives faster than lidar data
+		
+	c2x buffering:
+		use a queue instead of an array, so that you don't waste your time looking through already-used entries
+		not sure how much impact that has, but it def. is far from optimal atm.
+
+	work on profiling to see what exactly is causing lag etc
+
+GENERAL IMPROVEMENTS 
 	consider changing the visualization so that instead of plotting directly, the data is just merged at a fusion center and
 	then published to a new topic. A second node can then subscribe to this topic and simply display ALL information from
 	the topic
@@ -69,4 +88,5 @@ REAL DATA
 		need to think about a weighting and how much sense this makes
 	2.	a dynamic threshold, that slowly increases as long as no object match was found, and decreases while objects are 
 		matched 
+
 

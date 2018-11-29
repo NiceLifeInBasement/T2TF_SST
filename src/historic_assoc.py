@@ -28,6 +28,7 @@ import general.t2ta_algorithms as t2ta
 from tracking_consistency.similarity import *
 import os
 from general.t2t_history import *
+import copy
 
 
 # --- Definiton of global variables
@@ -165,21 +166,18 @@ def callback_c2x_tf(data):
             # Create a point with z=0 for the source frame (out of c2x tracks x/y) coordinate
             point = PointStamped(header=head,
                                  point=Point(x=x_pos, y=y_pos, z=0))
-            point_vel = PointStamped(header=head, point=Point(x=x_vel, y=y_vel, z=0))
+            point_vel = PointStamped(header=head,
+                                     point=Point(x=x_vel, y=y_vel, z=0))
             # Don't use the current timestamp, use 0 to use the latest available tf data
             point.header.stamp = rospy.Time(0)
             # Now transform the point using the data
             tf_point = transformer.transformPoint(target_frame=dest_id, ps=point)
             tf_point_vel = transformer.transformPoint(target_frame=dest_id_vel, ps=point_vel)
+            # TODO instead of using transformPoint, see if you can manually get a transformation for this?
 
-            # TODO instead of using transformPoint, see if you can manually get a transformation for this going?
-
-            # Use the steps variable and the velocity to manipulate the position of the object depending on the time
-            # it has been seen but not updated by a new message (i.e. "steps")
-            # TODO currently, instead of steps, this uses constant_velo. Works, but doesn't fit the purpose
-            # TODO transforming the velocity doesn't really work, so im using the original velocity
-            track.box.center_x = tf_point.point.x + constant_velo * point_vel.point.x
-            track.box.center_y = tf_point.point.y + constant_velo * point_vel.point.y
+            # Update the track with the transformed data
+            track.box.center_x = tf_point.point.x
+            track.box.center_y = tf_point.point.y
 
             # DEBUG
             # print(str(track.box.center_x)+"\t"+str(track.box.center_y))
@@ -198,15 +196,39 @@ def callback_c2x_tf(data):
 
     c2x.append(data)
     history.add("c2x_0", data.tracks)  # Add the data to the history object under the name c2x_0
+
+    # The following block adds several fake measurements to the c2x tracking that are time delayed to the original
+    # measurement from the current timestep
+    # They also have changed x/y data based on velocity, so that the track doesn't need to be reused later on with the
+    # outdated coordinates and instead can work with "updated" coordinates for time steps that are not included in the
+    # real c2x messages.
+    add_points = 4  # how many "fake" points should be added between this and the next measurement
+    # TODO consider changing the timing/number of fakes depending on the time diff between this data and the last data
+    if len(data.tracks) > 0:  # only do the following if the track contained something
+        for i in range(add_points):
+            # add 4 more measurements, each based on the data, but with manipulated time and position based on velocity
+            fake_data = copy.deepcopy(data)  # Create a copy of the data
+            # now change the timestamp of this new data
+            # c2x data arrives every 0.2 seconds, so to fit an additional 4 measurements in there
+            time_shift = rospy.Duration(0, 40000000)  # increase by 1/20 of a sec
+            fake_data.header.stamp = fake_data.header.stamp + time_shift
+            for track in fake_data.tracks:
+                track.box.header.stamp = track.box.header.stamp + time_shift
+                track.box.center_x += constant_velo * track.box.velocity_x * (i+1)
+                track.box.center_y += constant_velo * track.box.velocity_y * (i+1)
+            c2x.append(fake_data)
+            history.add("c2x_0", fake_data.tracks)
+
     steps = 0
 
 
 # --- listener and global stuff
 
 
-def listener():
+def listener(args):
     """
     Prepare the subscribers and setup the plot etc
+    :param args: The programs arguments, usually sys.argv unless you called setup from a different functionx
     """
     global visuals, transformer, odom_frame, ibeo_frame
     odom_frame = None
@@ -225,8 +247,8 @@ def listener():
     rospy.Subscriber("tf_static", TFMessage, callback_tf_static)  # Acquire static transform message for "ibeo" frames
     # rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback_org_data)
 
-    if len(sys.argv) > 1:
-        fname = sys.argv[1]  # Get the filename
+    if len(args) > 1:
+        fname = args[1]  # Get the filename
         # now start a rosbag play for that filename
 
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
@@ -235,21 +257,28 @@ def listener():
     plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
 
     # Kill the process (if it was started)
-    if len(sys.argv) > 1:
+    if len(args) > 1:
         player_proc.terminate()
 
 
-if __name__ == '__main__':
+def setup(args=None):
+    """
+    Setup everything and call the listener function
+    :param args: If None, sys.argv will be used as a parameter for the listener, else this should simulate cmdline
+    parameters, so it should be ['path/to/file.py', 'bag_name'] where bagname is the name of the bag in the data folder.
+    """
+    global steps, src_id, dest_id, dest_id_vel, c2x, lock, history, hist_size, state_space, use_identity, transforms, t2ta_thresh, constant_velo, visuals
     steps = 0  # how many steps passed since the last time the c2x message was used
     src_id = "odom"  # transformations are performed FROM this frame
     dest_id = "ibeo_front_center"  # transformations are performed TO this frame
-    dest_id_vel = "ibeo_front_center"
+    dest_id_vel = "ibeo_front_center"  # frame to use for velocity transformation (equiv. to dest_id but for velo)
     c2x = []  # Array that is used to store all incoming c2x messages
     lock = thr.Lock()
     history = TrackingHistory()
     # hist_size = rospy.Duration(0) => history will be only 1 track (i.e. no history)
     # hist size Duration(4) causes significant lag already!
     hist_size = rospy.Duration(0, 500000000)  # .5 secs
+    hist_size = rospy.Duration(5)
     state_space = (True, False, False, False)  # usual state space: (TFFT), only pos: (TFFF)
     use_identity = True
 
@@ -262,17 +291,23 @@ if __name__ == '__main__':
 
     t2ta_thresh = 20
 
-    # arbitrary value that is multiplied with velocity to acquire the position of the c2x objects
-    constant_velo = -0.2
+    # value that is multiplied with velocity to acquire the position of the c2x objects in "untracked" time steps
+    # i.e. between messages (since the frequency of the messages is lacking)
+    constant_velo = 0.05  # factor that needs to be used for velo when looking at change between 2 consecutive steps
+    constant_velo = -0.1  # because the velocity is not correctly rotated, a negative factor produces better results
 
     # When playing maven-2.bag a passing car gets closer to the c2x track than its actual member - t2ta with history
     # would solve this problem, but the current "simple" similarity checker position-based function can't
     #   maybe the problem can already be solved by incorporating how old the c2x message was, since it doesnt take
     #   into account velocity+age and therefor lags behind its actual position
     # However, when using sim_velocity the system works better
-    # Choosing a small threshold (~3) causes the occasional loss of tracking (100 in singleton)
-    # Choosing a medium threshold (~8) causes no loss
-    # Choosing a bigger threshold will in general cause issues related to other objects getting merged
-    # However due to the low amount of "real" vehicles this isn't really an issue (road boundary merging doesnt matter)
 
-    listener()
+    if args is None:
+        listener(sys.argv)
+    else:
+        listener(args)
+
+
+if __name__ == '__main__':
+    # Simply call the setup function, don't pass args so that sys.argv is used instead
+    setup()
