@@ -1,0 +1,15 @@
+# Notes re: vierte tc
+# -------------
+# VORHER:
+1.
+    Fortschritt meinerseits: T2TA incl. History wie im Paper von peugeot implementiert. Funktioniert so weit, hat ein
+    paar performance probleme bei langer history
+
+2.
+    Transformation von c2x velocity daten ins ibeo frame?
+
+3.
+    Update zu neuen Daten?
+
+
+# NACHHER:
