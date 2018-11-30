@@ -29,7 +29,7 @@ from tracking_consistency.similarity import *
 import os
 from general.t2t_history import *
 import copy
-
+import tf_conversions as tf_c
 
 # --- Definiton of global variables
 # [...]
@@ -173,7 +173,13 @@ def callback_c2x_tf(data):
             # Now transform the point using the data
             tf_point = transformer.transformPoint(target_frame=dest_id, ps=point)
             tf_point_vel = transformer.transformPoint(target_frame=dest_id_vel, ps=point_vel)
+
             # TODO instead of using transformPoint, see if you can manually get a transformation for this?
+            # TODO trying to work around nicos snippet re: acquiring a tf matrix here
+            tf_mat = tf_c.toMatrix(tf_c.fromTf(transformer.lookupTransform(target_frame=dest_id, source_frame=src_id, time = rospy.Time(0))))
+            print(np.dot(tf_mat[0:1][0:1], [point.point.x, point.point.y]))
+
+            # print(tf_mat)
 
             # Update the track with the transformed data
             track.box.center_x = tf_point.point.x
@@ -278,7 +284,7 @@ def setup(args=None):
     # hist_size = rospy.Duration(0) => history will be only 1 track (i.e. no history)
     # hist size Duration(4) causes significant lag already!
     hist_size = rospy.Duration(0, 500000000)  # .5 secs
-    hist_size = rospy.Duration(5)
+    hist_size = rospy.Duration(0)
     state_space = (True, False, False, False)  # usual state space: (TFFT), only pos: (TFFF)
     use_identity = True
 
@@ -310,4 +316,8 @@ def setup(args=None):
 
 if __name__ == '__main__':
     # Simply call the setup function, don't pass args so that sys.argv is used instead
+
+    # cProfile stuff to create a profile and dump it into a file
+
     setup()
+
