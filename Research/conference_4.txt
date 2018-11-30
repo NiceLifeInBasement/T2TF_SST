@@ -13,3 +13,32 @@
 
 
 # NACHHER:
+1.
+    -
+
+2.
+    eigen(affin?) - "linear" um rotationsmat zu bekommen
+    tfconversions
+    siehe mail
+
+3.
+    keine cpm(~3 wochen bis das laufen könnte?), aber mehrere bags aus verschiedenen fahrzeugen,
+    die in der gleichen situation aufgezeichnet wurden.
+        Die bags sind die daten der LIDAR scanner von 2 fahrzeugen
+    Dabei wichtig:
+        Zeitsynchronisation ist nicht gegeben: Die bags sind gegeneinander verschoben, zeiten in den bags sind auf
+        ~200ms genau
+
+    Die bags müssen parallel abgespielt/noch gemerged werden
+
+    Nico arbeitet daran Kovarianz zu exportieren, aber in den ersten files wird das noch nicht mit drin sein
+
+    Zwischenziel:
+        Zeitsynchronisation
+        Assoziation
+        Erstmal noch keine Fusion, da keine Cov data dabei ist
+
+    Wenn später cov mit dabei sind, vielleicht auch mal FCI oder so drüber laufen lassen?
+
+# WEITERES:
+nuscenes angucken
