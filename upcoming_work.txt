@@ -13,49 +13,15 @@ SIMULATION OF DATA
 	some functions still get cov_example_id and inside they have hard coded max/min_val for get_random_cov (i.e. the spread fct)
 		
 
-REAL DATA
-!	issue: "rotation" of velocity? maybe need to use some other conversion method of points
-		currently using transformPoint() but that only takes x/y/z (setting z=0)
-		might need to rotate manually anyway? or look through the other functions (transformPose(), lookupTwist()?)
-			could use lookupTwist() and give this twist the velocity data
-		consider implementing your own function that takes a point in the format x/y/vel_x/... and a Transformer object and
-		performs this (or a class that subscribes to the tf topics, creates its own subscriber and can be called just like
-		that)
-	!	the same issue will arise with boxes (since their x/y) dimension change with rotation aswell
-		
-		can maybe just treat them like point coordinates? since its all just x/y data anyway...
-			that should work!? 
-		--> currently implemented this like this, but for length/width this is problematic I think
-	!	THIS DOESNT WORK, YOU NEED TO FIND A DIFFERENT WAY THAN WHATS CURRENTLY HAPPENING
-		Velocity transformation only depends on frame rotation, but not translation, but tf is also doing translation
-			"https://answers.ros.org/question/205503/linear-velocity-transformation-in-ros/"
-			SOL: create your own coordinate frame with same origin as odom but rotation = rotation of ibeo_front_center
-			then you will only rotate, but not translate
-			ISSUE: thats not that easy, because the two frames are not directly connected in the tf tree
-		https://math.stackexchange.com/questions/40164/how-do-you-rotate-a-vector-by-a-unit-quaternion
-			this could work
-			the question is what the quaternion you use to rotate is
-				maybe you can rotate using both (get to fixed frame, then to new frame)
-				unless the quaternions in tf are relative to the their parent coord frames (which I assume)
-					then you would need to perform rotations along the tf tree (odom->imu->base_link->ibeo_fc)
-	snippet from nico to get transformation matrix (extract only the rotation matrix from that?)
-		need to look through the api+the snippet a bit more and understand all functions that are involved in there	
-		use that to get a rot mat and use that on the vector that you have for velocity
-	
+REAL DATA	
 	c2x vehicle display is not working correctly (jumping around etc)
-		probably due to the low frequency of incoming c2x data
-		might need something like a constant velo model to accomodate for the low freq
-			take into account age+velocity of the car (probably with a small multiplicative factor to reduce impact)
-				
-		--> implemented some basic fixes, but its still not up to date compared to the lidar data		
-		TEST/IMPROVE constant velocity model to manipulate the coordinates
-		--> Implemented a way to add "fake data" to the list of c2x data, that includes a manipulated timestamp and position.
-		    This essentially produces data for the time steps where no c2x data was produced.
-			Fine tuning for the velocity is necessary, also the velocity rotation issue is impacting this obvs.
-			currently, using a negative factor produces better results than a positive one (implying rotation issues) 
-
-	analyze the issue that bigger history sizes cause worse results in some cases
-		and also maybe check if you can improve the performance a bit, with bigger history it causes huge lag
+		--> fixed for the most part by implementing fake data + velocity rotation 
+		there are still some issues left, the c2x data data doesn't match the lidar good enough for association in scenarios
+		where cars are very close to each other
+		--> Added in a flat offset for the x-axis (on the c2x data, value ~4)
+			This drastically improved the results in both bags.
+			However, it might be "overfitting" to the given data
+			This is also not done in the algorithms, but alongside the transformation in the main node
 
 	re: creation of fake data to fill time steps where no c2x data was received:
 	currently, timing and number of fake data points are fixed (+4 points with 0.04 sec delay between)
@@ -77,8 +43,9 @@ REAL DATA
 			this was not yet implemented for the history object, TODO check if entries there are used multiple times
 			(in that case, you can't simply remove them after extracting them like in the c2x data)
 
-	work on profiling to see what exactly is causing lag etc
+	work on profiling to see what exactly is causing lag etc 
 		np.linalg.inv is something I have seen multiple times already
+		in general, so far profiling didn't help pinpointing the issue
 
 
 GENERAL IMPROVEMENTS 
@@ -92,9 +59,15 @@ GENERAL IMPROVEMENTS
 		this would also allow you to store bagfiles of results
 
 	consider adding in (/testing) the following change to the t2td(with history) function:
-	1.	instead of averaging over all time points included in the history, weight the more recent ones higher
+	1.	instead of averaging over all time points included in the history, weigh the more recent ones higher
 		need to think about a weighting and how much sense this makes
 	2.	a dynamic threshold, that slowly increases as long as no object match was found, and decreases while objects are 
-		matched 
+		matched (this might be not necessary, selecting a decent threshold should be enough)
+
+OTHER DATASETS
+	NuScenes
+	Pro: 	Very good data, annotated, lots of meaningful scenes, different sensors 
+	Issue: 	Technically, the goal was to "ignore" the used sensor and work on finished tracks instead
+		Scenes are for a single car, the goal implied the usage of multiple cars that drive along side each other though.
 
 

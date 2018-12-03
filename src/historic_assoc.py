@@ -114,8 +114,9 @@ def callback_tracking(data):
                     # If a non-singleton cluster was found, print all ids that belong to it
                     print("<<  Non-singleton Cluster: " + str(temp) + "  >>")
                     pass
-        except ValueError:
+        except ValueError as e:
             print("ValueError during association")
+            # print(e)
         except IndexError:
             print("IndexError during association, likely because not enough data was received yet.")
 
@@ -153,7 +154,7 @@ def callback_c2x_tf(data):
     """
     Stores the last c2x message, but transforms it beforehand
     """
-    global history, steps, constant_velo
+    global history, steps, constant_velo, c2x_offset_x, c2x_offset_y
     tracks = data.tracks
     head = SimulatedVehicle.create_def_header(frame_id=src_id)
     # transformer: tf.TransformerROS
@@ -175,13 +176,14 @@ def callback_c2x_tf(data):
 
             # Acquire the transformation matrix for this
             tf_mat = tf_c.toMatrix(tf_c.fromTf(transformer.lookupTransform(target_frame=dest_id, source_frame=src_id, time=rospy.Time(0))))
+            # print(tf_mat)
+
             # TODO check if 0:2, 0:2 is the correct part of the matrix, it works quite well so I assume its correct
             # tf_vel stores the transformed velocity
             tf_vel = np.dot(tf_mat[0:2, 0:2], [x_vel, y_vel])
-
             # Update the track with the transformed data
-            track.box.center_x = tf_point.point.x
-            track.box.center_y = tf_point.point.y
+            track.box.center_x = tf_point.point.x + c2x_offset_x
+            track.box.center_y = tf_point.point.y + c2x_offset_y
             track.box.velocity_x = tf_vel[0]
             track.box.velocity_y = tf_vel[1]
             # DEBUG
@@ -257,7 +259,12 @@ def listener(args):
         # now start a rosbag play for that filename
 
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
-        player_proc = subprocess.Popen(['rosbag', 'play', fname], cwd="data/", stdout=FNULL)
+        rate = '-r 0.2'  # set the number to whatever you want your play-rate to be
+        # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
+        # in realtime), you will then get results after the bag finished playing (cached results)
+        # using '-r 0.25' is still too fast for maven-1.bag
+        # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
+        player_proc = subprocess.Popen(['rosbag', 'play', rate, fname], cwd="data/", stdout=FNULL)
 
     plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
 
@@ -272,7 +279,7 @@ def setup(args=None):
     :param args: If None, sys.argv will be used as a parameter for the listener, else this should simulate cmdline
     parameters, so it should be ['path/to/file.py', 'bag_name'] where bagname is the name of the bag in the data folder.
     """
-    global steps, src_id, dest_id, dest_id_vel, c2x, lock, history, hist_size, state_space, use_identity, transforms, t2ta_thresh, constant_velo, visuals
+    global steps, src_id, dest_id, dest_id_vel, c2x, lock, history, hist_size, state_space, use_identity, transforms, t2ta_thresh, constant_velo, visuals, c2x_offset_x, c2x_offset_y
     steps = 0  # how many steps passed since the last time the c2x message was used
     src_id = "odom"  # transformations are performed FROM this frame
     dest_id = "ibeo_front_center"  # transformations are performed TO this frame
@@ -293,21 +300,24 @@ def setup(args=None):
 
     # define a similarity function for t2ta
     # Init the similarity checker that provides the similarity function
-
-    t2ta_thresh = 20
+    # 20 works safe, but leads to some wrong associations between c2x data and road boundaries in very few scenarios
+    # reduced it to 13 for now, but without doing extensive testing
+    t2ta_thresh = 13
 
     # value that is multiplied with velocity to acquire the position of the c2x objects in "untracked" time steps
     # i.e. between messages (since the frequency of the messages is lacking)
     # factor that needs to be used for velo when looking at change between 2 consecutive steps
-    constant_velo = 0.1  # 0.1 performs best in my tests using maven-1.bag
+    constant_velo = 0.05  # 0.05 performs best in my tests using maven-1.bag (if using c2x_offset_x=4)
     # The new transformation of velocity using the extracted matrix works, so you can now use a "normal" factor.
 
-    # When playing maven-2.bag a passing car gets closer to the c2x track than its actual member - t2ta with history
-    # would solve this problem, but the current "simple" similarity checker position-based function can't
-    #   maybe the problem can already be solved by incorporating how old the c2x message was, since it doesnt take
-    #   into account velocity+age and therefor lags behind its actual position
-    # However, when using sim_velocity the system works better
+    # Constant offsets for all c2x data
+    # TODO possibly "overfitting", but works incredibly well on both bag files
+    # I assume the reason that this works/is necessary could be because the trackers have different "centers of tracking
+    # boxes, and therefore this offset is necessary to "skip" the distance between the points
+    c2x_offset_x = 4
+    c2x_offset_y = 0
 
+    # Check which arguments should be used (parameter if possible, else sys.argv)
     if args is None:
         listener(sys.argv)
     else:

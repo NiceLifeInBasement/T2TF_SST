@@ -496,7 +496,7 @@ def t2t_distance_box(box_a, box_b, state_space=(True, False, False, True), use_i
         dlist.append(distance)
         # print the (current) average of the distance between the objects used for debugging
         print(str(sum(dlist) / float(len(dlist)))+" with no_entries = "+str(len(dlist)))
-        if len(dlist) == 200:
+        if len(dlist) == 500:  # for maven-1.bag . goes over almost all entries for id 496
             sys.exit(0)
     """
 
