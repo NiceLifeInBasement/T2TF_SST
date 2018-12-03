@@ -38,7 +38,10 @@ REAL DATA
 				maybe you can rotate using both (get to fixed frame, then to new frame)
 				unless the quaternions in tf are relative to the their parent coord frames (which I assume)
 					then you would need to perform rotations along the tf tree (odom->imu->base_link->ibeo_fc)
-		
+	snippet from nico to get transformation matrix (extract only the rotation matrix from that?)
+		need to look through the api+the snippet a bit more and understand all functions that are involved in there	
+		use that to get a rot mat and use that on the vector that you have for velocity
+	
 	c2x vehicle display is not working correctly (jumping around etc)
 		probably due to the low frequency of incoming c2x data
 		might need something like a constant velo model to accomodate for the low freq
@@ -70,9 +73,13 @@ REAL DATA
 	c2x buffering:
 		use a queue instead of an array, so that you don't waste your time looking through already-used entries
 		not sure how much impact that has, but it def. is far from optimal atm.
+		--> implemented: delete used entries from the c2x array
+			this was not yet implemented for the history object, TODO check if entries there are used multiple times
+			(in that case, you can't simply remove them after extracting them like in the c2x data)
 
 	work on profiling to see what exactly is causing lag etc
 		np.linalg.inv is something I have seen multiple times already
+
 
 GENERAL IMPROVEMENTS 
 	consider changing the visualization so that instead of plotting directly, the data is just merged at a fusion center and

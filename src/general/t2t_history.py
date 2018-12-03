@@ -482,11 +482,22 @@ def t2t_distance_box(box_a, box_b, state_space=(True, False, False, True), use_i
 
     distance = np.dot(part_1, part_2)
     distance = np.dot(distance, part_3)
-    # TODO consider testing adding an if for the following (if not use_identity:)
     distance = np.add(distance, part_4)
 
-    # DEBUG
-    # if box_b.object_id == 496:
-    #    print("IDS:" + str(box_a.object_id)+"@"+str(box_a.box.header.stamp) + " & " + str(box_b.object_id)+"@"+str(box_b.box.header.stamp)+"\td: "+str(distance))
+    """
+    # DEBUG - works for maven-1.bag
+    global dlist  # global variable to store all distance values
+    try:
+        dlist
+    except NameError:
+        dlist = []
+    if box_b.object_id == 496:  # testing for maven-1.bag, where obj_id 100 and 496 are associated
+        # print("IDS:" + str(box_a.object_id)+"@"+str(box_a.box.header.stamp) + " & " + str(box_b.object_id)+"@"+str(box_b.box.header.stamp)+"\td: "+str(distance))
+        dlist.append(distance)
+        # print the (current) average of the distance between the objects used for debugging
+        print(str(sum(dlist) / float(len(dlist)))+" with no_entries = "+str(len(dlist)))
+        if len(dlist) == 200:
+            sys.exit(0)
+    """
 
     return distance

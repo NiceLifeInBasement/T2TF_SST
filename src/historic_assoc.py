@@ -45,7 +45,9 @@ def callback_tracking(data):
     global visuals, lock, transforms, steps, c2x, inc_c2x, history, t2ta_thresh, state_space, use_identity
     lock.acquire()
     c2x_selection = closest_match(c2x, data.header.stamp)
-
+    if c2x_selection is not None:
+        # Remove the selected c2x entry from the list of all c2x entries so that it doesn't get used twice
+        c2x.remove(c2x_selection)
     visuals.plot_box_array(data.boxes, append=False)
     # Append the current information to the history object
     history.add("lidar_0", data.boxes)
@@ -166,25 +168,22 @@ def callback_c2x_tf(data):
             # Create a point with z=0 for the source frame (out of c2x tracks x/y) coordinate
             point = PointStamped(header=head,
                                  point=Point(x=x_pos, y=y_pos, z=0))
-            point_vel = PointStamped(header=head,
-                                     point=Point(x=x_vel, y=y_vel, z=0))
             # Don't use the current timestamp, use 0 to use the latest available tf data
             point.header.stamp = rospy.Time(0)
             # Now transform the point using the data
             tf_point = transformer.transformPoint(target_frame=dest_id, ps=point)
-            tf_point_vel = transformer.transformPoint(target_frame=dest_id_vel, ps=point_vel)
 
-            # TODO instead of using transformPoint, see if you can manually get a transformation for this?
-            # TODO trying to work around nicos snippet re: acquiring a tf matrix here
-            tf_mat = tf_c.toMatrix(tf_c.fromTf(transformer.lookupTransform(target_frame=dest_id, source_frame=src_id, time = rospy.Time(0))))
-            print(np.dot(tf_mat[0:1][0:1], [point.point.x, point.point.y]))
-
-            # print(tf_mat)
+            # Acquire the transformation matrix for this
+            tf_mat = tf_c.toMatrix(tf_c.fromTf(transformer.lookupTransform(target_frame=dest_id, source_frame=src_id, time=rospy.Time(0))))
+            # TODO check if 0:2, 0:2 is the correct part of the matrix, it works quite well so I assume its correct
+            # tf_vel stores the transformed velocity
+            tf_vel = np.dot(tf_mat[0:2, 0:2], [x_vel, y_vel])
 
             # Update the track with the transformed data
             track.box.center_x = tf_point.point.x
             track.box.center_y = tf_point.point.y
-
+            track.box.velocity_x = tf_vel[0]
+            track.box.velocity_y = tf_vel[1]
             # DEBUG
             # print(str(track.box.center_x)+"\t"+str(track.box.center_y))
             # print("steps: "+str(steps)+"\tvelx: "+str(point_vel.point.x)+" vely: "+str(point_vel.point.y))
@@ -284,7 +283,7 @@ def setup(args=None):
     # hist_size = rospy.Duration(0) => history will be only 1 track (i.e. no history)
     # hist size Duration(4) causes significant lag already!
     hist_size = rospy.Duration(0, 500000000)  # .5 secs
-    hist_size = rospy.Duration(0)
+    # hist_size = rospy.Duration(0)
     state_space = (True, False, False, False)  # usual state space: (TFFT), only pos: (TFFF)
     use_identity = True
 
@@ -299,8 +298,9 @@ def setup(args=None):
 
     # value that is multiplied with velocity to acquire the position of the c2x objects in "untracked" time steps
     # i.e. between messages (since the frequency of the messages is lacking)
-    constant_velo = 0.05  # factor that needs to be used for velo when looking at change between 2 consecutive steps
-    constant_velo = -0.1  # because the velocity is not correctly rotated, a negative factor produces better results
+    # factor that needs to be used for velo when looking at change between 2 consecutive steps
+    constant_velo = 0.1  # 0.1 performs best in my tests using maven-1.bag
+    # The new transformation of velocity using the extracted matrix works, so you can now use a "normal" factor.
 
     # When playing maven-2.bag a passing car gets closer to the c2x track than its actual member - t2ta with history
     # would solve this problem, but the current "simple" similarity checker position-based function can't
@@ -316,8 +316,5 @@ def setup(args=None):
 
 if __name__ == '__main__':
     # Simply call the setup function, don't pass args so that sys.argv is used instead
-
-    # cProfile stuff to create a profile and dump it into a file
-
     setup()
 
