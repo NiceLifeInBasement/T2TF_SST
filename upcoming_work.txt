@@ -1,10 +1,6 @@
 Upcoming work that has to be done:
 
 SIMULATION OF DATA
-	covariance matrix from variance array (only diag filled)
-
-	implement one of the solutions for way to create covariance matrices, scrap the random-walk algorithm
-
 	change the variance for every sensor and have the covariance algo know that (therefore changing
 	their respective covariance matrices in such a way that the sensor with higher variance will get a lower weight)
 		already implemented a simple way of doing this, maybe redo it (based on variance lists instead of linear change)
