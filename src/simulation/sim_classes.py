@@ -128,9 +128,8 @@ class SimulatedVehicle:
         # cov_matrix = self.get_example_cov(example_id=cov_example_id)
 
         # Acquire a cov mat from the sd values, var = sd^2 so we square the given values
-        # TODO currently max/min_fac are hardcoded here
-        cov_matrix = self.get_random_cov(var_pos=sd_pos**2, var_vel=sd_vel**2, max_fac=1.15, min_fac=1.0)
-
+        # cov_matrix = self.get_random_cov(var_pos=sd_pos**2, var_vel=sd_vel**2, max_fac=1.15, min_fac=1.0)
+        cov_matrix = self.get_diagonal_cov(var_pos=sd_pos**2, var_vel=sd_vel**2)
         # ----
         oriented_box = bobmsg.OrientedBox(header=header, center_x=noisy_center_x, center_y=noisy_center_y,
                                           angle=noisy_angle, length=noisy_length, width=noisy_width,
@@ -324,6 +323,84 @@ class SimulatedVehicle:
         # The only basis for the data is the variance of the measurements
         # This is just for simulation/testing purposes, not to acquire realistic data
         # - - - - -
+
+        # create cov_list, which is a list of covariance entries from the array
+        cov_list = [nan for x in range(49)]
+        # Start with 49 nan entries, now just need to fill in the values at the correct position
+
+        # TODO currently just dealing with the default case (pos+vel cov.) and throwing an error else
+        if (var_pos is not None) and (var_angle is None) and (var_lw is None) and (var_vel is not None):
+            # Default case
+            pass  # Here, insert values at their default (correct) positions
+            # cov_mat has size 4*4 since we have pos+vel cov
+            # cov_list has 49 (7*7) entries, but only the outer 2*2 squares in the corners need to be filled
+            # since pos_cov has ids 0 and 1 and vel_cov has ids 5 and 6
+            cov_list[0] = var_mat[0][0]
+            cov_list[1] = var_mat[0][1]
+            cov_list[5] = var_mat[0][2]
+            cov_list[6] = var_mat[0][3]
+
+            cov_list[7] = var_mat[1][0]
+            cov_list[8] = var_mat[1][1]
+            cov_list[12] = var_mat[1][2]
+            cov_list[13] = var_mat[1][3]
+
+            cov_list[35] = var_mat[2][0]
+            cov_list[36] = var_mat[2][1]
+            cov_list[40] = var_mat[2][2]
+            cov_list[41] = var_mat[2][3]
+
+            cov_list[42] = var_mat[3][0]
+            cov_list[43] = var_mat[3][1]
+            cov_list[47] = var_mat[3][2]
+            cov_list[48] = var_mat[3][3]
+        else:
+            print("Unexpected Covariance entries, assuming that only position and velocity have covariance entries")
+            raise RuntimeError("Received unexpected covariance entries (expecting only pos.+vel. cov.")
+
+        # Create Float64MultiArray similar to those in the bag files
+        dim_0 = MultiArrayDimension(label="", size=7, stride=49)
+        dim_1 = MultiArrayDimension(label="", size=7, stride=7)
+        cov_dim = [dim_0, dim_1]
+        cov_layout = MultiArrayLayout(dim=cov_dim, data_offset=0)
+        return Float64MultiArray(layout=cov_layout, data=cov_list)
+
+    @staticmethod
+    def get_diagonal_cov(var_pos=None, var_angle=None, var_lw=None, var_vel=None):
+        """
+        Creates a random covariance matrix based on variance values.
+        The resulting matrix will be a diagonal matrix (i.e. only the variance entries will be used)
+        If any parameter is passed as none, its relevant entries in the final matrix will be NaN
+        :param var_pos: Variance for the position (x and y) or None if NaN in the final matrix
+        :param var_vel: Variance for the velocity (a and y) or None if NaN in the final matrix
+        :param var_angle: Variance for the angle or None if NaN in the final matrix
+        :param var_lw: Variance for the length and width or None if NaN in the final matrix
+        :param max_fac: max_fac for the spread() algorithm
+        :param min_fac: min_fac for the spread() algorithm
+        :return: A covariance matrix in format std_msgs/Float64MultiArray
+        """
+        var_vec = []
+        if var_pos is not None:
+            # Append position variance twice (x+y)
+            var_vec.append(var_pos)
+            var_vec.append(var_pos)
+        if var_angle is not None:
+            # Append angle variance once
+            var_vec.append(var_angle)
+        if var_lw is not None:
+            # Append length/width variance twice (x+y)
+            var_vec.append(var_pos)
+            var_vec.append(var_pos)
+        if var_vel is not None:
+            # Append velocity variance twice (x+y)
+            var_vec.append(var_vel)
+            var_vec.append(var_vel)
+
+        # Create a matrix out of this list and use the spread() function on the result to acquire a cov matrix
+        var_mat = SimulatedVehicle.vec_to_mat(var_vec)
+
+        # This matrix is not in the correct format yet, its just a numpy 2D array without the necessary NaNs
+        nan = float("NaN")
 
         # create cov_list, which is a list of covariance entries from the array
         cov_list = [nan for x in range(49)]
