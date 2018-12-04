@@ -30,6 +30,7 @@ import os
 from general.t2t_history import *
 import copy
 import tf_conversions as tf_c
+import pickle
 
 # --- Definiton of global variables
 # [...]
@@ -127,28 +128,12 @@ def callback_tf_static(data):
     """
     Acquires static tf data and adds it to the transformer object.
     """
-    global transformer, odom_frame, ibeo_frame
+    global transformer
+
     for tf_obj in data.transforms:
         # Force time == 0 or you will run into issues TODO time==0 force here
         tf_obj.header.stamp = rospy.Time(0)
         transformer.setTransform(tf_obj)
-
-        # Store two of the transform to acquire a constant translation and the rotation necessary for the two frames
-        # IDEA WAS:
-        #    create a new frame that can be used to transform by rotation without translation
-        # The following does not work. I assume this is because it skips steps in the tf tree, and therefore messes up
-        # the translation/rotation of the frames relative to each other
-        if tf_obj.header.frame_id == "odom":
-            odom_frame = tf_obj
-        if tf_obj.child_frame_id == "ibeo_front_center":
-            ibeo_frame = tf_obj
-        if odom_frame is not None and ibeo_frame is not None and dest_id_vel != dest_id:
-            vel_frame = ibeo_frame
-            vel_frame.transform.translation = odom_frame.transform.translation
-            vel_frame.child_frame_id = dest_id_vel
-            vel_frame.header.frame_id = "odom"
-            transformer.setTransform(vel_frame)
-
 
 def callback_c2x_tf(data):
     """
@@ -178,7 +163,6 @@ def callback_c2x_tf(data):
             tf_mat = tf_c.toMatrix(tf_c.fromTf(transformer.lookupTransform(target_frame=dest_id, source_frame=src_id, time=rospy.Time(0))))
             # print(tf_mat)
 
-            # TODO check if 0:2, 0:2 is the correct part of the matrix, it works quite well so I assume its correct
             # tf_vel stores the transformed velocity
             tf_vel = np.dot(tf_mat[0:2, 0:2], [x_vel, y_vel])
             # Update the track with the transformed data
@@ -237,9 +221,7 @@ def listener(args):
     Prepare the subscribers and setup the plot etc
     :param args: The programs arguments, usually sys.argv unless you called setup from a different functionx
     """
-    global visuals, transformer, odom_frame, ibeo_frame
-    odom_frame = None
-    ibeo_frame = None
+    global visuals, transformer
     rospy.init_node('listener_laser_scan', anonymous=True)
 
     transformer = tf.TransformerROS(True)
@@ -257,14 +239,25 @@ def listener(args):
     if len(args) > 1:
         fname = args[1]  # Get the filename
         # now start a rosbag play for that filename
-
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
-        rate = '-r 0.2'  # set the number to whatever you want your play-rate to be
+
+        play_rate = 0.15  # set the number to whatever you want your play-rate to be
+        rate = '-r' + str(play_rate)
         # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
         # in realtime), you will then get results after the bag finished playing (cached results)
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
-        player_proc = subprocess.Popen(['rosbag', 'play', rate, fname], cwd="data/", stdout=FNULL)
+
+        start_time = 215  # time at which the bag should start playing
+        time = '-s ' + str(start_time)
+        if start_time > 0:
+            pkl_filename = "./src/T2TF_SST/data/"  # folder
+            pkl_filename += "tf_static_dump.pkl"  # filename
+            with open(pkl_filename, 'rb') as pklinput:
+                tf_static_data = pickle.load(pklinput)
+                callback_tf_static(tf_static_data)
+
+        player_proc = subprocess.Popen(['rosbag', 'play', rate, time, fname], cwd="data/", stdout=FNULL)
 
     plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
 
