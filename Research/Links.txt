@@ -118,7 +118,62 @@ https://ieeexplore.ieee.org/document/7313517
     "covariance compensation and a covariance reconstarcution procedure that takes into account different sensor
     physical and its local tracker specific properties into account"
     gut geschrieben, gute informationen, teil auf in "full/partial/no info"
-    TODO zuende lesen
+
+
+https://pdfs.semanticscholar.org/44bc/47767782286c36393b288c97165e473749ac.pdf
+    "Advances in Multi-Sensor Data Fusion for Ubiquitous Positioning:
+    Novel Approaches for Robust Localization and Mapping"
+    [dlr]
+    bezieht sich speziell auch auf CAMs, ist also recht passend
+    sieht nach einer netten referenz aus
+
+https://elib.dlr.de/55254/3/F200808124-Paper.pdf
+    "INTEGRATION OF CAR-2-CAR COMMUNICATION AS A VIRTUALSENSOR IN
+    AUTOMOTIVE SENSOR FUSION FOR ADVANCEDDRIVER ASSISTANCE SYSTEMS"
+    [dlr]
+    c2x communication sensor fusion for cooperative adaptive cruise control
+
+https://ieeexplore.ieee.org/abstract/document/4657272
+    "V2V Communications in Automotive Multi-sensor Multi-target Tracking"
+    reread, scanned it once
+
+http://www.eislab.fim.uni-passau.de/files/publications/2008/SituationAwareDriverAssistance_preprint.pdf
+    "Hybrid Fusion Approach combining Autonomous and Cooperative Detection and Ranging methods
+    for Situation-aware Driver Assistance Systems"
+    geht zT recht tief auf einige hardware-nahen grundlagen ein
+    würde das jetzt als nicht besonders relevant beschreiben
+
+https://www.sciencedirect.com/science/article/pii/S1566253511000273
+    "Information fusion for automotive applications – An overview"
+    TODO READ
+    sciencedirect link, zugriff so nicht einfach möglich
+
+https://ieeexplore.ieee.org/abstract/document/6232130
+    BMW - 2012
+    "Car2X-Based Perception in a High-Level Fusion Architecture forCooperative Perception Systems"
+    passend, sehr ähnlich zu dem was wir machen. temporal+spatial alignment nehmen den größten teil des papers ein
+    (was bei uns "einfach" durch die transformation gelöst wird?)
+    enthält leider keinen breiten ausblick mit ideen für weitere ansätze + arbeit
+
+https://ieeexplore.ieee.org/abstract/document/6728345
+    "Inter-vehicle object association for cooperative perception systems"
+    BMW 2013 - ähnlich wie auch das paper darüber ist dieses sehr ähnlich zu unserem (CAM+CPM etc)
+    T2TA? mittels neuem "Auction-ICP algorithm" (ICP = Iterative closest point)
+    behandelt das problem, dass fahrzeuge zT falsche ego information via c2x übermittlen
+    interessanter ansatz (aufteilen der objekte in punkte, um festzustellen auf welche seite man guckt und die assoc.
+    entsprechend anzupassen
+    algorithmus basiert auf mahalanobis distanz, i.e. covariance wird gebraucht...
+
+https://ieeexplore.ieee.org/abstract/document/7013333
+    2014   ---- JUST TO STORE THE LINK
+    "Multi-sensor data fusion for checking plausibility of V2V communications by vision-based multiple-object tracking"
+    nicht gelesen. "plausibility" eher im sinne das keine falschen daten untergeschoben werden glaube ich
+
+
+http://ares.lids.mit.edu/fm/documents/cooperative.pdf
+    "Cooperative Perception for Autonomous Vehicle Control on the Road:Motivation and Experimental Results"
+    einmal grob durchgegangen, muss noch detaillierter gelesen werden
+    stichwort: map merging
 
 
 # --- T2TA ---
