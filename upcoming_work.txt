@@ -5,6 +5,8 @@ SIMULATION OF DATA
 	their respective covariance matrices in such a way that the sensor with higher variance will get a lower weight)
 		already implemented a simple way of doing this, maybe redo it (based on variance lists instead of linear change)
 
+		--> Done, currently just a linear shift across all "measurement nodes"
+
 	the entire code needs some cleanup re: covariance simulation
 	some functions still get cov_example_id and inside they have hard coded max/min_val for get_random_cov (i.e. the spread fct)
 		
@@ -40,8 +42,11 @@ REAL DATA
 			(in that case, you can't simply remove them after extracting them like in the c2x data)
 
 	work on profiling to see what exactly is causing lag etc 
-		np.linalg.inv is something I have seen multiple times already
+		np.linalg.inv is something I have seen multiple times already - but it doesnt really have high timing
 		in general, so far profiling didn't help pinpointing the issue
+
+	lag could be caused by the locking in combination with the general computation time of the algorithm preventing data
+	from coming in during those times
 
 
 GENERAL IMPROVEMENTS 
@@ -60,10 +65,51 @@ GENERAL IMPROVEMENTS
 	2.	a dynamic threshold, that slowly increases as long as no object match was found, and decreases while objects are 
 		matched (this might be not necessary, selecting a decent threshold should be enough)
 
+FUTURE WORK/IDEAS
+	use information fusion after the t2ta process, but not necessarily to improve positional data etc, but instead to provide
+	a better view on the data.
+	This is well-suited for incorporating CPM messages
+	(each word represents a car in the following examples)
+	example-1: 	EGO   LIDAR-1   C2X   			
+  				   LIDAR-2   
+		In this scenario, the c2x car will not show up on the lidar track. Fusing the given information therefore yields
+		a better view on the current road situation. This is straightforward fusion
+
+	example-2:
+			EGO	C2X			LIDAR-1
+					LIDAR-2
+		In this scenario, the C2X car is shown to be infront of the ego vehicle, but no lidar match is found for it.
+		This indicates an issue with either the lidar tracker or the c2x objects positional data.
+		(the view of the c2x should not be obstruced by any object, yet no match is found. Another indicator for an error
+		in this situation is the fact that the LIDAR-1 object is shown behind the c2x object - apparantly nothing is 
+		obstructing the lidar on the this path, yet the c2x object is not visible. This probably indicates an error with the
+		c2x data.
+
+	---
+
+	predict c2x maneuvers (passing etc)
+		might be a pretty big task
+		might not be as great with cpm insted of cam messages	
+
+		probably needs a lot more data to prevent overfitting
+		
+	---
+	
+	road boundary prediction?
+		already discussed earlier, probably too hard
+		if ibeos inbuilt tracker includes classification this is unnecessary
+
+	---
+	
+	currently, a fixed offset of 4 is used. 
+	assuming that such fixed offset for the c2x data exists, you could try to dynamically optimize this value
+		example: while an association is made, the x+y offsets are changed by a little bit in every timestep, in such a way
+		that all associations improve the most.
+		This should after some time yield a close-to-optimal offset (assuming that it exists (+ is linear) for all points)
 OTHER DATASETS
 	NuScenes
 	Pro: 	Very good data, annotated, lots of meaningful scenes, different sensors 
 	Issue: 	Technically, the goal was to "ignore" the used sensor and work on finished tracks instead
 		Scenes are for a single car, the goal implied the usage of multiple cars that drive along side each other though.
-
+		Fusion between different sensors was already performed here.
 
