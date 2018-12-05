@@ -1,0 +1,37 @@
+### Contains bagtimes where different interesting scenarios happen
+
+BAG: mavenNew_large.bag (== maven-2.bag)
+	TIME: 		25
+	SCENARIO: 	Car passing the c2x tracked object
+			Close enough to possibly cause association issues, but in the current implementation the association is not
+			lost.
+
+	TIME:		96
+	SCENARIO:	Objects are taking a turn at this time, lidar tracking is getting fuzzy
+			As a result of that, the object visualization becomes very fuzzy ("noisy")
+			Some issues with T2TA arise, but its hard to even visually tell cars and road boundaries apart
+			(therefore, associating the c2x-point with any single lidar point seems near impossible)
+
+	TIME: 		120
+	SCENARIO: 	C2X object is not visible to the lidar scan (hidden behind other vehicle)
+			This vehicle then proceeds to pass the c2x vehicle
+			
+	TIME:		150
+	SCENARIO:	(lidar-)recording car passes the c2x vehicle
+			c2x vehicle is slowly fading out of (lidar-)vision, while the c2x information is still being displayed
+			(but "behind" the recording car, which is centered at (0|0)) 
+
+	TIME:		195
+	SCENARIO:	The lidar object that matches the c2x object loses it's ID due to splitting: The object splits up into
+			two different ones (7389, 7622). The original object 7389 gets lost in a subsequent time step, but the
+			new matching object 7622 is immediately recognized by the association algorithm (and no road boundary 
+			is temporarily mapped to the c2x vehicle)
+
+	TIME:		198
+	SCENARIO:	Similar to the one @195s. The object gets split again (twice). The association is not lost in the process.
+
+	TIME: 		200
+	SCENARIO:	Cars take a right turn. The c2x vehicle is directly in front of the "self"-vehicle
+			The lidar object tracking creates lots of objects that are hard to tell apart from the real cars
+			The association is not particularly hard here, but this shows how object identification is really hard
+			to do without looking at the point cloud
