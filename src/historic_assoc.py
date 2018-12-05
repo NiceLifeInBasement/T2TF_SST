@@ -118,7 +118,7 @@ def callback_tracking(data):
         except ValueError as e:
             print("ValueError during association")
             # print(e)
-        except IndexError:
+        except IndexError as e:
             print("IndexError during association, likely because not enough data was received yet.")
 
     lock.release()
@@ -248,7 +248,7 @@ def listener(args):
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 195  # time at which the bag should start playing
+        start_time = 25  # time at which the bag should start playing
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder
@@ -284,7 +284,10 @@ def setup(args=None):
     # hist size Duration(4) causes significant lag already!
     hist_size = rospy.Duration(0, 500000000)  # .5 secs
     # hist_size = rospy.Duration(0)
+
     state_space = (True, False, False, False)  # usual state space: (TFFT), only pos: (TFFF)
+    # The threshold NEEDS TO BE ADJUSTED if you use something other than TFFF!
+
     use_identity = True
 
     transforms = []
@@ -295,14 +298,15 @@ def setup(args=None):
     # Init the similarity checker that provides the similarity function
     # 20 works safe, but leads to some wrong associations between c2x data and road boundaries in very few scenarios
     # reduced it to 13 for now, but without doing extensive testing
-    t2ta_thresh = 13
+    t2ta_thresh = 13  # Threshold for using only position data
+    # t2ta_thresh = 25  # Threshold for using position + velocity data
 
     # value that is multiplied with velocity to acquire the position of the c2x objects in "untracked" time steps
     # i.e. between messages (since the frequency of the messages is lacking)
     # factor that needs to be used for velo when looking at change between 2 consecutive steps
     constant_velo = 0.05  # 0.05 performs best in my tests using maven-1.bag (if using c2x_offset_x=4)
     # The new transformation of velocity using the extracted matrix works, so you can now use a "normal" factor.
-
+    float("inf")
     # Constant offsets for all c2x data
     # TODO possibly "overfitting", but works incredibly well on both bag files
     # I assume the reason that this works/is necessary could be because the trackers have different "centers of tracking
