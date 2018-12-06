@@ -111,6 +111,9 @@ FUTURE WORK/IDEAS
 					improved
 	alternativly, work with a per-object offset (every object that was associated at least once gets such an offset)
 
+		--> Implemented this, but you should not be doing this.
+			Even the fixed offset would be better (easier to explain) than this
+
 OTHER DATASETS
 	NuScenes
 	Pro: 	Very good data, annotated, lots of meaningful scenes, different sensors 

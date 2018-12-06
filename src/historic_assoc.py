@@ -32,6 +32,7 @@ import copy
 import tf_conversions as tf_c
 import pickle
 
+
 # --- Definiton of global variables
 # [...]
 
@@ -43,7 +44,7 @@ def callback_tracking(data):
     """
     # insert the basic code like in general_plot.py here to display everything etc
     # additionally, add the t2t_history code that updates the t2th object and calls the t2ta_historic code
-    global visuals, lock, transforms, steps, c2x, inc_c2x, history, t2ta_thresh, state_space, use_identity
+    global visuals, lock, transforms, steps, c2x, inc_c2x, history, t2ta_thresh, state_space, use_identity, c2x_offset_x, c2x_offset_y, c2x_offset_test
     lock.acquire()
     c2x_selection = closest_match(c2x, data.header.stamp)
     if c2x_selection is not None:
@@ -115,6 +116,49 @@ def callback_tracking(data):
                     # If a non-singleton cluster was found, print all ids that belong to it
                     print("<<  Non-singleton Cluster: " + str(temp) + "  >>")
                     pass
+
+                # DEBUG
+                # The following block checks for association clusters of size 2
+                # and then proceeds to store the distance between the boxes in these clusters
+                # Additionally, a print of the distance with the number of assoc. made is printed
+                if len(a) == 2:
+                    global avg_dist
+                    dist = t2t_distance_box(box_a=a[0], box_b=a[1], state_space=state_space, use_identity=use_identity)
+                    try:
+                        avg_dist
+                    except NameError:  # not yet initialized
+                        avg_dist = []
+                    avg_dist.append(dist)
+                    print("No. assoc:"+str(len(avg_dist))+"\t Avg Distance: "+str(sum(avg_dist)/len(avg_dist)))
+
+                # TODO the entire following if block is for dynamic offset changing, WHICH SHOULD NOT HAPPEN!
+                if len(a) == 2:  # TESTING INCREMENTAL OFFSET
+                    # found an association between the two tracks
+                    dist = t2t_distance_box(box_a=a[0], box_b=a[1], state_space=state_space, use_identity=use_identity)
+                    # TODO hardcoding a selection for id=100
+                    # test_box_a will gets its value changed
+                    if a[0].object_id == 100:
+                        test_box_a = copy.deepcopy(a[0])
+                        test_box_b = copy.deepcopy(a[1])
+                    else:
+                        test_box_b = copy.deepcopy(a[0])
+                        test_box_a = copy.deepcopy(a[1])
+                    # calc dist_up
+                    test_box_a.box.center_x += c2x_offset_test
+                    dist_up = t2t_distance_box(box_a=test_box_a, box_b=test_box_b,
+                                               state_space=state_space, use_identity=use_identity)
+                    # calc dist_down (subtract c2x_offset_test twice, because you added it once previously)
+                    test_box_a.box.center_x -= 2*c2x_offset_test
+                    dist_down = t2t_distance_box(box_a=test_box_a, box_b=test_box_b,
+                                               state_space=state_space, use_identity=use_identity)
+                    if dist_up < dist:
+                        # found an improvement by increasing the distance
+                        c2x_offset_x += c2x_offset_test
+                        print("Offset++ ->"+str(c2x_offset_x)+"\t distance -:"+str(dist-dist_up))
+                    if dist_down < dist:
+                        # found an improvement by increasing the distance
+                        c2x_offset_x -= c2x_offset_test
+                        print("Offset-- ->" + str(c2x_offset_x) + "\t distance -:" + str(dist - dist_down))
         except ValueError as e:
             print("ValueError during association")
             # print(e)
@@ -134,6 +178,7 @@ def callback_tf_static(data):
         # Force time == 0 or you will run into issues TODO time==0 force here
         tf_obj.header.stamp = rospy.Time(0)
         transformer.setTransform(tf_obj)
+
 
 def callback_c2x_tf(data):
     """
@@ -242,13 +287,14 @@ def listener(args):
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
 
         play_rate = 0.15  # set the number to whatever you want your play-rate to be
+        play_rate = 1
         rate = '-r' + str(play_rate)
         # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
         # in realtime), you will then get results after the bag finished playing (cached results)
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 25  # time at which the bag should start playing
+        start_time = 0  # time at which the bag should start playing
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder
@@ -272,11 +318,10 @@ def setup(args=None):
     :param args: If None, sys.argv will be used as a parameter for the listener, else this should simulate cmdline
     parameters, so it should be ['path/to/file.py', 'bag_name'] where bagname is the name of the bag in the data folder.
     """
-    global steps, src_id, dest_id, dest_id_vel, c2x, lock, history, hist_size, state_space, use_identity, transforms, t2ta_thresh, constant_velo, visuals, c2x_offset_x, c2x_offset_y
+    global steps, src_id, dest_id, c2x, lock, history, hist_size, state_space, use_identity, transforms, t2ta_thresh, constant_velo, visuals, c2x_offset_x, c2x_offset_y, c2x_offset_test
     steps = 0  # how many steps passed since the last time the c2x message was used
     src_id = "odom"  # transformations are performed FROM this frame
     dest_id = "ibeo_front_center"  # transformations are performed TO this frame
-    dest_id_vel = "ibeo_front_center"  # frame to use for velocity transformation (equiv. to dest_id but for velo)
     c2x = []  # Array that is used to store all incoming c2x messages
     lock = thr.Lock()
     history = TrackingHistory()
@@ -306,13 +351,14 @@ def setup(args=None):
     # factor that needs to be used for velo when looking at change between 2 consecutive steps
     constant_velo = 0.05  # 0.05 performs best in my tests using maven-1.bag (if using c2x_offset_x=4)
     # The new transformation of velocity using the extracted matrix works, so you can now use a "normal" factor.
-    float("inf")
     # Constant offsets for all c2x data
     # TODO possibly "overfitting", but works incredibly well on both bag files
     # I assume the reason that this works/is necessary could be because the trackers have different "centers of tracking
     # boxes, and therefore this offset is necessary to "skip" the distance between the points
     c2x_offset_x = 4
     c2x_offset_y = 0
+
+    c2x_offset_test = 0.0  # value that will be added+subtracted in every step to improve the above offset_x
 
     # Check which arguments should be used (parameter if possible, else sys.argv)
     if args is None:
