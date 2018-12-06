@@ -58,6 +58,8 @@ GENERAL IMPROVEMENTS
 		so msg would just be header+points, with points being an array of x+y+id+color (which in itself should probably be
 		a second msg definition)
 		this would also allow you to store bagfiles of results
+	You could also clean up the visualization and remove the reliance on different lists for x/y coords etc and instead simply
+	reduce everything to tuple-based storage/display (since thats far more useful in practice anyway)
 
 	consider adding in (/testing) the following change to the t2td(with history) function:
 	1.	instead of averaging over all time points included in the history, weigh the more recent ones higher

@@ -175,6 +175,16 @@ http://ares.lids.mit.edu/fm/documents/cooperative.pdf
     einmal grob durchgegangen, muss noch detaillierter gelesen werden
     stichwort: map merging
 
+https://ieeexplore.ieee.org/abstract/document/6866903
+    "Multivehicle Cooperative Driving Using Cooperative Perception: Design and Experimental Validation"
+    fasst map merging nochmal zusammen/diskutiert ansätze
+
+https://ieeexplore.ieee.org/abstract/document/6856570
+    "A cooperative active blind spot assistant as example for next-gen cooperative driver assistance systems (CoDAS)"
+    Nutzen CAM Messages in 2 autos um blind spot detection bei überholmanövern kooperativ zu realisieren
+    interessanter anwendungsfall von CAM nachrichten
+
+
 
 # --- T2TA ---
 http://c4i.gmu.edu/~pcosta/F15/data/fileserver/file/472165/filename/Paper_1570113827.pdf

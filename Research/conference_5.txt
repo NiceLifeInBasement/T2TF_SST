@@ -1,0 +1,16 @@
+# Notes re: fünfte tc (07.12--verschoben!)
+# -------------
+# VORHER:
+1.
+    Transformation der Geschwindigkeit mittels Rotationsmatrix funktioniert
+    Parallele Visualisierung der lidar-tracks und den point-clouds ("neue" bags) ist sehr hilfreich für evaluation
+    Aktueller Stand: (siehe ImageResults)
+
+2.
+    Neue Daten? (mehrere bagfiles versch. fahrzeuge?)
+
+3.
+    Allgemein konkretere Zielstellung?
+    --> Wo wollen wir mit den ergebnissen am ende hin?
+    --> Anwendungsfall? (wie soll das am ende im kompletten system eingesetzt werden?)
+
