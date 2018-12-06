@@ -8,3 +8,8 @@ http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.476.5164&rep=rep1&type=
 
 https://www.cs.utexas.edu/~teammco/misc/kalman_filter/
         clean and simple kalman explanation (incl algorithm) for state space = (x,y,velX,velY)
+
+
+https://github.com/yukitsuji/3D_CNN_tensorflow
+    3D Fully Convolutional Network using PointCloud data for Vehicle Detection
+    seems like it could work for vehicle classification in the point clouds that we have
