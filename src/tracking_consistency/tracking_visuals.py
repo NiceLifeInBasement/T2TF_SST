@@ -7,8 +7,10 @@ import pandas as pd
 import rospy
 from bob_perception_msgs.msg import *
 import matplotlib.animation as plt_animation
+import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 from bob_perception_msgs.msg import *
+import copy
 
 
 class TrackVisuals:
@@ -39,6 +41,8 @@ class TrackVisuals:
     neg_limit_y = 50
     annotation_method = None
     window_name = "Tracking Visualization"
+    bounding_boxes = []  # List of bounding boxes as tuple (x,y,l,w,id,color)
+    rectangle_refs = []  # List of bounding box patch rectangle reference (for deletion)
 
     def __init__(self, limit=50, neg_limit=-50, limit_y=None, neg_limit_y=-50, color='b'):
         """
@@ -65,6 +69,7 @@ class TrackVisuals:
         self.ids = []
         self.ax = plt.axes(xlim=(self.neg_limit, self.limit), ylim=(self.neg_limit_y, self.limit_y))
         self.x, self.y = [], []
+        self.bounding_boxes = []
         self.def_color = color
         # self.ax.autoscale(enable=False)  # Appears to change nothing, should prevent axis autoscaling
         self.sc = self.ax.scatter(self.x, self.y, c=color)
@@ -194,6 +199,88 @@ class TrackVisuals:
 
         # pass this data on to the plot_points_tuple function where it will be processed further
         self.plot_points_tuple(points=points, append=append)
+
+    def plot_box_array_rectangles(self, boxes, color='b', append=False):
+        """
+        Performs a plotting operation for rectangles (i.e. bounding boxes) that were passes as TrackedOrientedBoxes
+        :param boxes: Array of TrackedOrientedBoxes containing the information to plot
+        :param color: Color to use for the plot (since this is not provided in the TrackedOrientedBox array)
+        :param append: Whether to append the points or redraw. See plot_points documentation.
+        """
+        rectangles = []  # Array where all data points will be stored
+        for tracked_box in boxes:
+            # Extract relevant information for the next box
+            object_id = tracked_box.object_id
+            oriented_box = tracked_box.box
+            x = oriented_box.center_x
+            y = oriented_box.center_y
+            l = oriented_box.length
+            w = oriented_box.width
+            t = (x, y, l, w, object_id, color)
+            rectangles.append(t)  # Append this information to the list of bounding boxes
+
+        self.plot_bounding_boxes(boxes=rectangles, append=append)
+        # pass extracted data to the relevant function to plot it
+
+    def plot_bounding_boxes(self, boxes, append=False):
+        """
+        Plots a single bounding box (i.e. a rectangle specified by position and x+y coordinates
+        :param boxes: Array of Tuples (x, y, length, width, id, plot_color) for the bounding box
+        :param append: If True, the current plot will not be erased on plotting. If False, this will redraw for only
+        the array of information in boxes
+        """
+        # Check if the relevant data should be appended or not
+
+        if not append:
+            # Should not append, clear all boxes
+            for rect in self.rectangle_refs:
+                try:
+                    rect.remove()
+                except ValueError:
+                    # wasn't in list, possibly already removed (multi threading?)
+                    pass
+
+        self.bounding_boxes = boxes
+
+        # Remove annotations
+        for i, a in enumerate(self.ann_list):
+            try:
+                a.remove()
+            except ValueError:
+                # In case some multi-threading has already cleared all the data, don't attempt to remove it
+                pass
+        self.ann_list[:] = []  # clear the annotation list
+
+        # Plot all bounding boxes
+        for box in self.center_to_bottom_left(boxes):
+            x, y, l, w , object_id, color = box  # Extract current relevant information
+            # TODO check width/height with length/width (using width=l because the display is rotated 90 degrees)
+            vis_box = patches.Rectangle((x, y), width=l, height=w, angle=0.0,
+                                        linewidth=1, edgecolor=color, facecolor='none')
+            self.rectangle_refs.append(vis_box)
+            self.ax.add_patch(vis_box)  # Add the rectangle to the plot
+            self.ann_list.append(self.ax.annotate(str(object_id), (x, y)))  # Annotate the rectangle
+
+        # Add new annotations
+
+        plt.gcf().canvas.draw()
+
+    @staticmethod
+    def center_to_bottom_left(boxes):
+        """
+        Converts a set of rectangles with x/y as center coords to a set of boxes with bottom-left coordinates.
+        :param boxes: The original boxes
+        :return: The boxes moved by half of their length/width to fit the usual rectangle definition.
+        """
+        adjusted = []
+        for box in boxes:
+            x, y, l, w, object_id, color = box  # Extract current relevant information
+            # TODO check length/width <-> xy
+            x_new = x-w/2
+            y_new = y-l/2
+            box_new = (x_new, y_new, l, w, object_id, color)
+            adjusted.append(box_new)
+        return adjusted
 
     def add_point(self, x_new, y_new):
         """

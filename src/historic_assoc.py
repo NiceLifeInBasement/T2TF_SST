@@ -50,7 +50,13 @@ def callback_tracking(data):
     if c2x_selection is not None:
         # Remove the selected c2x entry from the list of all c2x entries so that it doesn't get used twice
         c2x.remove(c2x_selection)
-    visuals.plot_box_array(data.boxes, append=False)
+
+    global plot_bounding_boxes
+    if plot_bounding_boxes:
+        visuals.plot_box_array_rectangles(data.boxes, color='b', append=False)
+    else:
+        visuals.plot_box_array(data.boxes, append=False)
+
     # Append the current information to the history object
     history.add("lidar_0", data.boxes)
 
@@ -79,7 +85,10 @@ def callback_tracking(data):
             width = track.box.width
             try:
                 next_point = (x_pos, y_pos, track.object_id, "y")
-                visuals.plot_points_tuple([next_point], append=True)
+                if plot_bounding_boxes:
+                    visuals.plot_box_array_rectangles([track], color="y", append=True)
+                else:
+                    visuals.plot_points_tuple([next_point], append=True)
             except tf.ExtrapolationException as e:
                 # Extrapolation error, print but keep going (possible just because only one frame was received so far)
                 print(e)
@@ -359,6 +368,9 @@ def setup(args=None):
     c2x_offset_y = 0
 
     c2x_offset_test = 0.0  # value that will be added+subtracted in every step to improve the above offset_x
+
+    global plot_bounding_boxes
+    plot_bounding_boxes = True
 
     # Check which arguments should be used (parameter if possible, else sys.argv)
     if args is None:
