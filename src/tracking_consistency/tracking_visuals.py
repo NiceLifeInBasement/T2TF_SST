@@ -243,25 +243,25 @@ class TrackVisuals:
         self.bounding_boxes = boxes
 
         # Remove annotations
-        for i, a in enumerate(self.ann_list):
-            try:
-                a.remove()
-            except ValueError:
-                # In case some multi-threading has already cleared all the data, don't attempt to remove it
-                pass
-        self.ann_list[:] = []  # clear the annotation list
+        # Only do this if you don't append to the data, if you do append keep all annotations for the boxes
+        if not append:
+            for i, a in enumerate(self.ann_list):
+                try:
+                    a.remove()
+                except ValueError:
+                    # In case some multi-threading has already cleared all the data, don't attempt to remove it
+                    pass
+            self.ann_list[:] = []  # clear the annotation list
 
         # Plot all bounding boxes
         for box in self.center_to_bottom_left(boxes):
             x, y, l, w , object_id, color = box  # Extract current relevant information
             # TODO check width/height with length/width (using width=l because the display is rotated 90 degrees)
             vis_box = patches.Rectangle((x, y), width=l, height=w, angle=0.0,
-                                        linewidth=1, edgecolor=color, facecolor='none')
+                                        linewidth=1, edgecolor=color, facecolor=color, alpha=0.3, fill=True)
             self.rectangle_refs.append(vis_box)
             self.ax.add_patch(vis_box)  # Add the rectangle to the plot
             self.ann_list.append(self.ax.annotate(str(object_id), (x, y)))  # Annotate the rectangle
-
-        # Add new annotations
 
         plt.gcf().canvas.draw()
 
