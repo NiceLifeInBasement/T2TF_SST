@@ -1,5 +1,30 @@
 Upcoming work that has to be done:
 
+# ------------------------
+# Upcoming 11.Dec
+# (in descending order)
+# ------------------------
+
+[data coming next week hopefully]
+	Test the historic association algorithm for this data
+	
+Simulate additional CAM messages to the real data
+	Get a fixed scenario so that you know which IDs match cars and which don't
+	Create a simulated CAM message for that car, that has measurement error (covariance is not needed for now)
+	Test the association algorithm for this new data
+
+	--> WORKS
+
+Kalman filter to estimate the offset (the one currently fixed to 4)
+	or another method that has a good mathematical foundation for estimating the offset
+	lower priority
+	do some literature research to check what commonly used method for this problem are
+
+	DONT DO THIS FOR NOW
+# ------------------------
+# Pre 11.Dec 
+# ------------------------
+
 SIMULATION OF DATA
 	change the variance for every sensor and have the covariance algo know that (therefore changing
 	their respective covariance matrices in such a way that the sensor with higher variance will get a lower weight)
@@ -47,6 +72,8 @@ REAL DATA
 
 	lag could be caused by the locking in combination with the general computation time of the algorithm preventing data
 	from coming in during those times
+	
+	the indexerror during assoc probably needs some fixing, it's not only happening at the beginning (?)
 
 
 GENERAL IMPROVEMENTS 

@@ -279,7 +279,12 @@ def t2ta_historic(obj_ids, sensor_names, threshold, history_size, history, time,
         next_obj_id_list = obj_ids[i]
         for next_obj_id in next_obj_id_list:
             # Acquire a single track (use [0] at the end, because the function returns a list containing 1 object)
-            next_single_track = history.get_timestep(next_obj_id, next_sensor_name, time=time, hist_size=rospy.Duration(0))[0]
+            next_track_list = history.get_timestep(next_obj_id, next_sensor_name, time=time, hist_size=rospy.Duration(0))
+            # TODO sometimes, this returns an empty list for some reason
+            if len(next_track_list) == 0:
+                # If an empty list was found for this, return an empty cluster list to prevent IndexErrors
+                return []
+            next_single_track = next_track_list[0]
             # Append this tracks to the list of tracks relevant for its sensor
             tracks[i].append(next_single_track)
 

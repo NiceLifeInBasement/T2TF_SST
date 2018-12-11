@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 from __future__ import print_function
 """
-Similar to general_plot.py, but uses historic T2TA instead.
+Plays a bagfile from a selected list of files that were manually selected.
+Additional CAM messages for all visible vehicles are simulated. Using these and the original CAM messages, T2TA between
+C2X messags and lidar scan object tracking is performed.
 
-This can play a bag file that includes multiple data sources and fuse them using T2TA approach that is incorporating
-history into association.
-The bag data is plotted as usual.
-Association results are printed to the commandline, but can of course also be published to a new topic or handed over
-to a fusion centre that then performs T2TF with the resulting data
+This is based on historic_assoc.py.
+
+List of all bag files that can be used: (enter the number before it as the command line parameter to select it)
+0. cut130_142.bag
+    Is a cut-down of mavenNew_large.bag to only the time between seconds 130 to 142 of that bag.
+    Scenario: Car passing the (real) c2x vehicle in front of the ego car
 """
 
 import numpy as np
@@ -33,8 +36,24 @@ import tf_conversions as tf_c
 import pickle
 
 
-# --- Definiton of global variables
-# [...]
+# --- method that converts a lidar scan to a simulated c2x measurement and returns this
+def to_c2x_measurement(original_data):
+    """
+    Converts a lidar scan to a simulated c2x measurement and returns this.
+    :param original_data: TrackedOrientedBox that should be used as a basis for this
+    :return: A TrackedOrientedBox that is a simulated c2x message based on the input.
+    """
+    global pos_stddev  # The stddev that should be used for changing the positional data of the box
+    scan = copy.deepcopy(original_data)
+    scan.object_id = scan.object_id * 100  # Add 2 0s to the object id to make distinguishable from the original data
+    x_new = np.random.normal(loc=scan.box.center_x, scale=pos_stddev)
+    y_new = np.random.normal(loc=scan.box.center_y, scale=pos_stddev)
+
+    scan.box.center_x = x_new
+    scan.box.center_y = y_new
+
+    return scan
+
 
 # --- callback functions
 def callback_tracking(data):
@@ -44,7 +63,7 @@ def callback_tracking(data):
     """
     # insert the basic code like in general_plot.py here to display everything etc
     # additionally, add the t2t_history code that updates the t2th object and calls the t2ta_historic code
-    global visuals, lock, transforms, steps, c2x, inc_c2x, history, t2ta_thresh, state_space, use_identity, c2x_offset_x, c2x_offset_y, c2x_offset_test
+    global visuals, lock, transforms, steps, c2x, inc_c2x, history, t2ta_thresh, state_space, use_identity, c2x_offset_x, c2x_offset_y, c2x_offset_test, no_bag
     lock.acquire()
     c2x_selection = closest_match(c2x, data.header.stamp)
     if c2x_selection is not None:
@@ -59,6 +78,32 @@ def callback_tracking(data):
 
     # Append the current information to the history object
     history.add("lidar_0", data.boxes)
+
+    # ---
+    # SIMULATION OF ADDITIONAL C2X entry
+    if c2x_selection is not None:
+        # here, the incoming data is used to simulate additional c2x messages.
+        # For that, it's necessary to know which IDs belong to cars in the current bag. Since this can not be extracted
+        # from the bag data, a hard coded list is used instead
+        vehicle_ids = []  # List of all object_ids of objects that were identified as vehicles
+        if no_bag == 0:
+            vehicle_ids = [4784]
+        elif no_bag == 1:
+            vehicle_ids = [6077, 7736, 7739, 7755, 7756, 7770, 7773, 7772, 7785]  # [7781, 7886] maybe?
+
+        # selected all ids, proceed to add additional lidar scans for this data
+        for tracked_box in data.boxes:
+            if tracked_box.object_id in vehicle_ids:
+                extra_c2x = to_c2x_measurement(tracked_box)
+                # Now, append this extra_c2x TrackedOrientedBox to the history object and also use it for the current
+                # step of assoc etc
+                c2x_selection.tracks.append(extra_c2x)
+        global lidar_steps
+        try:
+            lidar_steps += 1
+        except NameError:
+            lidar_steps = 1
+    # ---
 
     if c2x_selection is not None:
         # Also include c2x data in the plot
@@ -123,9 +168,34 @@ def callback_tracking(data):
                 ids.append(temp)  # ids is a list made up of lists of object ids
                 if len(a) > 1:
                     # If a non-singleton cluster was found, print all ids that belong to it
-                    print("<<  Non-singleton Cluster: " + str(temp) + "  >>")
-                    pass
+                    global print_clusters  # Boolean that specifies whether to print clustering information
+                    if print_clusters:
+                        print("<<  Non-singleton Cluster: " + str(temp) + "  >>")
+                    # --- ADD_CAM specific
+                    # additionally, maintain a counter of how many associations were correct
+                    global assoc_correct
+                    try:  # init global list if it hasn't happened before
+                        assoc_correct
+                    except NameError:
+                        assoc_correct = []  # Array that stores 1 for a correct assoc and 0 for a bad one
+                    if 100 in temp:
+                        pass  # "Real" CAM message, do not track since correct association
+                    else:
+                        if temp[0]*100 == temp[1]:
+                            # follows the rule of id changed from the simulation: correct assoc
+                            assoc_correct.append(1)
+                        else:
+                            assoc_correct.append(0)
 
+                        # Boolean to determine whether information about the association should be printed:
+                        show_assoc_information = len(assoc_correct) % 10 == 0  # Show assoc info every 10 steps
+                        show_assoc_information = True  # Show assoc info in every step
+                        if show_assoc_information:
+                            percent_correct = float(sum(assoc_correct)) / len(assoc_correct) * 100
+                            print("No. assoc: "+str(len(assoc_correct))+"\t"+"Correct: "+str(sum(assoc_correct))+"\t%CORRECT: "+str(percent_correct))
+                            percent_of_total = float(len(assoc_correct)) / lidar_steps * 100
+                            print("No. assoc: "+str(len(assoc_correct))+"\t"+"Possible: "+str(lidar_steps)+"\t%TOTAL: "+str(percent_of_total))
+                            print("")
                 # DEBUG
                 # The following block checks for association clusters of size 2
                 # and then proceeds to store the distance between the boxes in these clusters
@@ -138,9 +208,12 @@ def callback_tracking(data):
                     except NameError:  # not yet initialized
                         avg_dist = []
                     avg_dist.append(dist)
-                    print("No. assoc:"+str(len(avg_dist))+"\t Avg Distance: "+str(sum(avg_dist)/len(avg_dist)))
 
-                # TODO the entire following if block is for dynamic offset changing, WHICH SHOULD NOT HAPPEN!
+
+                    # DEBUG
+                    # print("No. assoc:"+str(len(avg_dist))+"\t Avg Distance: "+str(sum(avg_dist)/len(avg_dist)))
+
+                # TODO the entire following if block is for dynamic offset changing, WHICH SHOULD NOT HAPPEN! (at least not like this)
                 if len(a) == 2:  # TESTING INCREMENTAL OFFSET
                     # found an association between the two tracks
                     dist = t2t_distance_box(box_a=a[0], box_b=a[1], state_space=state_space, use_identity=use_identity)
@@ -172,7 +245,9 @@ def callback_tracking(data):
             print("ValueError during association")
             # print(e)
         except IndexError as e:
+            #print(e)
             print("IndexError during association, likely because not enough data was received yet.")
+
 
     lock.release()
 
@@ -268,13 +343,13 @@ def callback_c2x_tf(data):
     steps = 0
 
 
-# --- listener and global stuff
-
-
-def listener(args):
+def listener(fname, recreate_tf_static=True):
     """
     Prepare the subscribers and setup the plot etc
-    :param args: The programs arguments, usually sys.argv unless you called setup from a different functionx
+    :param fname: The name of the file to start
+    :param recreate_tf_static: True if the tf_static message saved in data/tf_static_dump.pkl should be loaded.
+    This needs to be set to True if the bag that will be played does not contain the single tf_static msg that is
+    usually right at the beginning of the bag file.
     """
     global visuals, transformer
     rospy.init_node('listener_laser_scan', anonymous=True)
@@ -291,44 +366,40 @@ def listener(args):
     rospy.Subscriber("tf_static", TFMessage, callback_tf_static)  # Acquire static transform message for "ibeo" frames
     # rospy.Subscriber("tracked_objects/scan", TrackedLaserScan, callback_org_data)
 
-    if len(args) > 1:
-        fname = args[1]  # Get the filename
-        # now start a rosbag play for that filename
-        FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
+    # now start a rosbag play for that filename
+    FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
 
-        play_rate = 0.15  # set the number to whatever you want your play-rate to be
-        # play_rate = 1
-        rate = '-r' + str(play_rate)
-        # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
-        # in realtime), you will then get results after the bag finished playing (cached results)
-        # using '-r 0.25' is still too fast for maven-1.bag
-        # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
+    play_rate = 0.15  # set the number to whatever you want your play-rate to be
+    # play_rate = 1
+    rate = '-r' + str(play_rate)
+    # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
+    # in realtime), you will then get results after the bag finished playing (cached results)
+    # using '-r 0.25' is still too fast for maven-1.bag
+    # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 0.1  # time at which the bag should start playing
-        time = '-s ' + str(start_time)
-        if start_time > 0:
-            pkl_filename = "./src/T2TF_SST/data/"  # folder
-            pkl_filename += "tf_static_dump.pkl"  # filename
-            with open(pkl_filename, 'rb') as pklinput:
-                tf_static_data = pickle.load(pklinput)
-                callback_tf_static(tf_static_data)
+    start_time = 0  # time at which the bag should start playing
+    time = '-s ' + str(start_time)
 
-        player_proc = subprocess.Popen(['rosbag', 'play', rate, time, fname], cwd="data/")#, stdout=FNULL)
+    if recreate_tf_static:
+        pkl_filename = "./src/T2TF_SST/data/"  # folder
+        pkl_filename += "tf_static_dump.pkl"  # filename
+        with open(pkl_filename, 'rb') as pklinput:
+            tf_static_data = pickle.load(pklinput)
+            callback_tf_static(tf_static_data)
+
+    player_proc = subprocess.Popen(['rosbag', 'play', rate, time, fname], cwd="./", stdout=FNULL)
 
     plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
 
     # Kill the process (if it was started)
-    if len(args) > 1:
-        player_proc.terminate()
+    player_proc.terminate()
 
 
-def setup(args=None):
+def setup():
     """
-    Setup everything and call the listener function
-    :param args: If None, sys.argv will be used as a parameter for the listener, else this should simulate cmdline
-    parameters, so it should be ['path/to/file.py', 'bag_name'] where bagname is the name of the bag in the data folder.
+    Setup all global variables and start the listener for all necessary topics
     """
-    global steps, src_id, dest_id, c2x, lock, history, hist_size, state_space, use_identity, transforms, t2ta_thresh, constant_velo, visuals, c2x_offset_x, c2x_offset_y, c2x_offset_test
+    global steps, src_id, dest_id, c2x, lock, history, hist_size, state_space, use_identity, transforms, t2ta_thresh, constant_velo, visuals, c2x_offset_x, c2x_offset_y, c2x_offset_test, no_bag
     steps = 0  # how many steps passed since the last time the c2x message was used
     src_id = "odom"  # transformations are performed FROM this frame
     dest_id = "ibeo_front_center"  # transformations are performed TO this frame
@@ -370,17 +441,29 @@ def setup(args=None):
 
     c2x_offset_test = 0.0  # value that will be added+subtracted in every step to improve the above offset_x
 
-    global plot_bounding_boxes
+    global plot_bounding_boxes, print_clusters
     plot_bounding_boxes = False
+    print_clusters = False
 
-    # Check which arguments should be used (parameter if possible, else sys.argv)
-    if args is None:
-        listener(sys.argv)
+    # Select the name of the bagfile from the list of allowed files
+    # The list is intentionally hard-coded
+    list_bagnames = ["data/cut130_142.bag", "data/cut200_205.bag"]
+    no_bag = 0
+    global pos_stddev
+    if len(sys.argv) < 3:
+        print("Arguments need to be \"<file_id> <measurement stddev>\"")
+        print("Defaulting to \"0 0.05\"")
+        no_bag = 0
+        pos_stddev = 0.1
     else:
-        listener(args)
+        no_bag = int(sys.argv[1])
+        pos_stddev = float(sys.argv[2])
+
+    fname = list_bagnames[no_bag]  # Select the bag from the list of files
+
+    # Now setup the start
+    listener(fname)
 
 
 if __name__ == '__main__':
-    # Simply call the setup function, don't pass args so that sys.argv is used instead
     setup()
-
