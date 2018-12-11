@@ -1,0 +1,30 @@
+# Notes re: sechste tc (11.12)
+1.
+    zeitplan so wie bisher besprochen:
+        2018 praktisch
+        2019 schreiben, bis ~ ende januar
+    alles darüber hinaus (bspw einbinden in projekt (läuft bis 28.2)) in forschungspraktikum oder hiwi arbeit etc
+
+2.
+    2 neue bags kommen heute noch
+        diese werden gleichzeitig auch aktuell noch bearbeitet um daraus CPM nachrichten zu exportieren
+    16:10:24 und 16:10:27 sind die startzeiten der beiden bags
+    zum transformieren ins gleiche koordinaten system:
+        beide können in UTM transformiert werden.
+        vorgehen:
+            Bag A in UTM
+            Daten so in Bag B einspeisen
+            eingespeiste Daten in Bag B dann ins lokale system transformieren
+
+    auf diesen bags dann jetzt erstmal die algorithmen testen
+
+3.
+    langfristig wäre es interessant den code einzubinden (stichwort "bob framework")
+    --> Laufzeit probleme beheben wäre ziemlich nützlich
+
+4.
+    allgemein in der bachelorarbeit zusätzlich noch:
+    t2ta algorithmus (laufzeit-)analysieren, vielleicht verbessern, probleme finden etc
+
+5.
+    nächste woche (sobald die daten als cpms exportiert sind) noch eine tc (VOR FREITAG)
