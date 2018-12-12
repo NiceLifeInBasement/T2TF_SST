@@ -138,7 +138,7 @@ def callback_tracking(data):
                     except NameError:  # not yet initialized
                         avg_dist = []
                     avg_dist.append(dist)
-                    print("No. assoc:"+str(len(avg_dist))+"\t Avg Distance: "+str(sum(avg_dist)/len(avg_dist)))
+                    # print("No. assoc:"+str(len(avg_dist))+"\t Avg Distance: "+str(sum(avg_dist)/len(avg_dist)))
 
                 # TODO the entire following if block is for dynamic offset changing, WHICH SHOULD NOT HAPPEN!
                 if len(a) == 2:  # TESTING INCREMENTAL OFFSET
@@ -297,14 +297,14 @@ def listener(args):
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
 
         play_rate = 0.15  # set the number to whatever you want your play-rate to be
-        # play_rate = 1
+        play_rate = 1
         rate = '-r' + str(play_rate)
         # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
         # in realtime), you will then get results after the bag finished playing (cached results)
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 0.1  # time at which the bag should start playing
+        start_time = 96  # time at which the bag should start playing
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder
@@ -313,7 +313,7 @@ def listener(args):
                 tf_static_data = pickle.load(pklinput)
                 callback_tf_static(tf_static_data)
 
-        player_proc = subprocess.Popen(['rosbag', 'play', rate, time, fname], cwd="data/")#, stdout=FNULL)
+        player_proc = subprocess.Popen(['rosbag', 'play', rate, time, fname], cwd="data/", stdout=FNULL)
 
     plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
 
@@ -338,7 +338,7 @@ def setup(args=None):
     # hist_size = rospy.Duration(0) => history will be only 1 track (i.e. no history)
     # hist size Duration(4) causes significant lag already!
     hist_size = rospy.Duration(0, 500000000)  # .5 secs
-    # hist_size = rospy.Duration(0)
+    hist_size = rospy.Duration(0)
 
     state_space = (True, False, False, False)  # usual state space: (TFFT), only pos: (TFFF)
     # The threshold NEEDS TO BE ADJUSTED if you use something other than TFFF!

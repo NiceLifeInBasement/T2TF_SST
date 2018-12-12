@@ -1,0 +1,122 @@
+lag is caused by the t2thistory function:
+    when using a t2thistory				(measurements were performed >once, yielding very similar results)
+                size of 0secs:
+    "0.000128724273933 avg seconds to process after nsteps=5578" --> 0.718024 secs spend in the function
+                size of 3secs:
+    "0.0600779352815 avg seconds to process after nsteps=5578" --> 335.114723 secs spend in the function
+                size of 0.5secs:
+    "0.00379787235568 avg seconds to process after nsteps=5578" --> 21.184532 secs spend in the function
+
+    3secs takes around 16x as much time as 0.5 secs
+
+    The avg seconds to process increase during the whole playtime of the bag for the 3sec size, but stay rougly the same
+    for the 0sec time -> This implies that a longer history causes issues when searching as the history size grows more
+    and more, while selecting a single entry does not require a search through the entire history.
+
+    The solution to improving the algorithms performance when using the t2thistory would therefore be to improve the
+    T2THistory object used to store all tracks. Possible Solutions would be: Delete entries that were looked at during
+    the search, but were too old to be used.
+
+    Average size of the history during the association:
+        3sec --> Avg size ~21, 0.5 --> Avg Size 6
+        Increase of factor ~20 in the time spent in the function
+
+    The big issue is the common_history function:
+        Size:		Avg % of calculation time spent in the common_history fct after 5k steps:
+        0 sec		1.17647058528		# No time spent in there, since both tracks are equal size (1)
+        0.5 sec		57.7205882368
+        3 sec		97.5307956325
+        (% based on absolute time detailed above, so absolute time in common history increases A LOT with time)
+
+    The difference in length between the tracks is 200-300 if tracking with size=3sec, and only goes up to 50 with 0.5sec
+        significant difference, this alone might already cause some lag because the loop needs to be iterated
+        absolute length matches diff in length (since those numbers include matches with temporary objects)
+
+    the closest match function iterates once over a list of objects to select the closest match in the given
+    list of objects.
+    If 2 lists are given (len=10,200) then the following loops are done:
+        # common -> done in common_history
+        # closest -> done in closest_match
+        LOOP smallest track (common)				# 10x
+            LOOP all tracks	(common)			# (2x)
+                LOOP selected track (closest)		# 10x, 200x
+                    OPERATION			# O(1)
+    This means, for the 10, 200 case:
+        Inner 2 loops run 10+200 times (once for each track at its length)
+        The outer loops runs 10 times
+        => 10x210=2100 operations
+    Given 2 loops of length L={l_1, l_2}, the amount of operations therefore is equal to:
+        min(L)*sum(L)
+    assuming balanced track length (-> l_1 = l_2 = l)
+        l * 2l = 2(l^2)
+    The length of tracks quadratically influences the amount of comparison operations in the array with a naive
+    implementation.
+
+    Looking at the time of individual box comparisons:
+        duration=0	"0.000140302066667 avg seconds to process after nsteps=15000"
+        duration=3	"0.000137556466667 avg seconds to process after nsteps=15000"
+    --> NO DIFF (as expected)
+
+    Option: sort the lists in O(nlogn) and then iterate over the smallest list.
+        You cant take the first min(L) elements out of the longer list (since there is the possibility of breaks)
+        Instead, go through the shorter list and keep a bookmark in the longer one, increasing the bookmark until
+        a match is found in the current list, then doing one step in the shorter list, and beginning to look for the
+        next best match in the longer list (starting with the bookmark)
+    (in general I assume WLOG: l_1=min(L))
+    EXAMPLE:	List-1(times)(#=5)		List-2(times)(#=10)
+                        1				2		8
+                        5				3		10
+                        8				4		11
+                        11				5		12
+                        14				6		13
+        here, taking list-2[0:5] would yield bad results. The matching done by the above method would be:
+            1-2, 5-5, 8-8, 11-11, 14-13
+        For this the entire list-2 needs to be iterated once
+    The runtime of this sorting based algorithm would therefore be:
+        l_1 * log(l_1) + l_2 * log(l_2) + l_2
+        or, for balanced list length:
+            2*(l*log(l))+l => O(n logn) instead of O(n^2)
+
+    3sec version takes 16x as long as 0.5 secs version, 3secs version has 200 vs 50 as length of tracks.
+    Factor for length increase: 4, O(n^2) -> 4*4 = 16 which roughly matches the factor of time increase
+
+    If you assume that the lists are already sorted (since they are extracted in a sorted way from the history
+    object), you can bring this down to O(n)
+
+    In Practice, this yields the following result for size = 3secs:
+        0.002116448 avg seconds to process after nsteps=5000
+            Average Length of the tracks: 21
+            Average Time spent creating a common history: 0.0003991106
+            This is a percent value of %: 30.5280528054
+    where a run with the old common_history function yields:
+        0.0636187938 avg seconds to process after nsteps=5000
+            Average Length of the tracks: 21
+            Average Time spent creating a common history: 0.0612237686
+            This is a percent value of %: 96.5569810817
+    Time spend to process is 10.58224 vs 318.093969.
+
+    When adding in a function to sort the arrays (instead of assuming they are already sorted):
+
+    size = 3sec
+        0.0034446462 avg seconds to process after nsteps=5000
+            Average Length of the tracks: 21
+            Average Time spent creating a common history: 0.0017340776
+            This is a percent value of %: 45.3295277633
+        This leads to a time spend in process of 17.223231.
+
+    size = .5sec
+        0.0013319322 avg seconds to process after nsteps=5000
+            Average Length of the tracks: 6
+            Average Time spent creating a common history: 0.0006602124
+            This is a percent value of %: 28.9473684201
+        This leads to a time spend in process of 6.659661.
+    size = 0sec
+        0.0001440246 avg seconds to process after nsteps=5000
+            Average Length of the tracks: 1
+            Average Time spent creating a common history: 2.47799999991e-06
+            This is a percent value of %: 1.09890109616
+        This leads to a time spend in process of 0.720123.
+    As expected, size=0sec does not differ before and after the change, this the length is 1 anyway.
+
+    Overall, this means a performance increase of over 95% for the 3sec duration history.
+    After the change, the 3sec duration history performs better than the .5sec history did before the change.
