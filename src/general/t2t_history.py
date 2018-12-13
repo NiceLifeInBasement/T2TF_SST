@@ -479,6 +479,7 @@ def t2t_distance_historic(track_a, track_b, state_space=(True, False, False, Tru
     # Perform averaging (i.e. the multiplication with 1/n in the formula in the paper)
     distance /= len(track_a)
 
+    """
     # DEBUG
     global avg_timed, avg_len, avg_common
     try:
@@ -502,6 +503,7 @@ def t2t_distance_historic(track_a, track_b, state_space=(True, False, False, Tru
     if len(avg_timed) == 5000:  # Stop after 5000 assoc. steps
         sys.exit(0)
     # ---
+    """
 
     return distance
 

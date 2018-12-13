@@ -296,15 +296,15 @@ def listener(args):
         # now start a rosbag play for that filename
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
 
-        play_rate = 0.15  # set the number to whatever you want your play-rate to be
-        play_rate = 1
+        play_rate = 0.4  # set the number to whatever you want your play-rate to be
+        # play_rate = 1
         rate = '-r' + str(play_rate)
         # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
         # in realtime), you will then get results after the bag finished playing (cached results)
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 96  # time at which the bag should start playing
+        start_time = 0  # time at which the bag should start playing
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder

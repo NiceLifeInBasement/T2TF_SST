@@ -80,8 +80,7 @@ lag is caused by the t2thistory function:
     3sec version takes 16x as long as 0.5 secs version, 3secs version has 200 vs 50 as length of tracks.
     Factor for length increase: 4, O(n^2) -> 4*4 = 16 which roughly matches the factor of time increase
 
-    If you assume that the lists are already sorted (since they are extracted in a sorted way from the history
-    object), you can bring this down to O(n)
+    If you assume that the lists are already sorted, you can bring this down to O(n)
 
     In Practice, this yields the following result for size = 3secs:
         0.002116448 avg seconds to process after nsteps=5000
@@ -116,7 +115,7 @@ lag is caused by the t2thistory function:
             Average Time spent creating a common history: 2.47799999991e-06
             This is a percent value of %: 1.09890109616
         This leads to a time spend in process of 0.720123.
-    As expected, size=0sec does not differ before and after the change, this the length is 1 anyway.
+    As expected, size=0sec does not differ before and after the change, since the length is 1 anyway.
 
     Overall, this means a performance increase of over 95% for the 3sec duration history.
     After the change, the 3sec duration history performs better than the .5sec history did before the change.
