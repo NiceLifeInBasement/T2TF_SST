@@ -41,14 +41,17 @@ def callback_fascare(data):
 
     In addition to the received data, data from the viewcar2 data buffer is used
     """
-    global viewcar2_odom_data, visuals, transformer_fascare
+    global viewcar2_odom_data, visuals, transformer_fascare, do_ego_plot
     try:
         viewcar2_odom_data
     except NameError:
         # Alternativly: consider a quick display of the information
         return  # No viewcar2 data was received so far, simply skip this step
 
-    visuals.plot_box_array(data.boxes, append=False, color="b")
+    transparency = 0.2  # Used across all plots that should be transparant
+    focus_association = True  # If True: No annotation for the rest of the plot, extra plot for associated objects
+
+    visuals.scatter_box_array(data.boxes, append=False, color="b", alpha=transparency, annotate=(not focus_association))
     vc_data = viewcar2_odom_data[-1]
 
     # Transform the last set of viewcar2_data into this frames ibeo_front_center
@@ -69,6 +72,7 @@ def callback_fascare(data):
             # TODO currently only transforming x/y position, but nothing else (ignoring velocity etc)
 
             track.box.header.frame_id = dest_id  # Changed the frame that the point is in
+
         # For all exceptions: print them, but keep going instead of stopping everything
         except tf.ExtrapolationException as e:
             # Extrapolation error, print but keep going (possible just because only one frame was received so far)
@@ -81,22 +85,64 @@ def callback_fascare(data):
             print(e)
     vc_data.header.frame_id = dest_id
 
-    visuals.plot_box_array(vc_data.boxes, append=True, color="y")
+    visuals.scatter_box_array(vc_data.boxes, append=True, color="y", alpha=transparency, annotate=(not focus_association))
+
+    if do_ego_plot:
+        # Plot the ego objects with alpha=1
+        ego_fascare = copy.deepcopy(data.boxes[0])
+        ego_fascare.box.center_x = 0
+        ego_fascare.box.center_y = 0
+        ego_fascare.object_id = -1
+
+        ego_viewcar2 = copy.deepcopy(data.boxes[0])
+        # Acquire the center of the point cloud
+        try:
+            if do_ego_plot:
+                ego_point = PointStamped(header=head, point=Point(x=0, y=0, z=0))
+                ego_point.header.stamp = rospy.Time(0)
+                global transformer_viewcar2
+                ego_point = transformer_viewcar2.transformPoint(target_frame=src_id, ps=point)
+                ego_point = transformer_fascare.transformPoint(target_frame=dest_id, ps=point)
+        # For all exceptions: print them, but keep going instead of stopping everything
+        except tf.ExtrapolationException as e:
+            # Extrapolation error, print but keep going (possible just because only one frame was received so far)
+            print(e)
+        except tf.ConnectivityException as e:
+            # print("Connectivity Exception during transform")
+            print(e)
+        except tf.LookupException as e:
+            # print("Lookup Exception during transform")
+            print(e)
+        ego_viewcar2.box.center_x = ego_point.point.x
+        ego_viewcar2.box.center_y = ego_point.point.y
+        ego_viewcar2.object_id = -2
+
+        # acquired 2 objects that can now be plotted
+        visuals.scatter_box_array([ego_fascare], append=True, color="b", alpha=1, annotate=False)
+        visuals.scatter_box_array([ego_viewcar2], append=True, color="y", alpha=1, annotate=False)
+    # ---
 
     # now to the association:
     # first, add the two tracks to the history
-    global history
-    history.add("fascare", data.boxes)
-    history.add("viewcar2", vc_data.boxes)
-    t2tassoc(data.boxes, vc_data.boxes)
+    global do_assoc
+    if do_assoc:
+        global history
+        history.add("fascare", data.boxes)
+        history.add("viewcar2", vc_data.boxes)
+        assoc = t2tassoc(data.boxes, vc_data.boxes)
+
+        if focus_association:  # Extra plot for associated objects
+            assoc_boxes = non_singletons(assoc)
+            visuals.scatter_box_array(assoc_boxes, append=True, color="r", alpha=1, annotate=True)
 
 
 def t2tassoc(data_a, data_b):
     """
     Associates the two datasets a and b (in the form of Arrays of trackedOrientedBoxes)
     information is simply printed to the commandline
-    :param data_a: The list of trackedorientboxes for the fascare
-    :param data_b: The list of trackedorientboxes for the viewcar2
+    :param data_a: The list of TrackedOrientedBoxes for the fascare
+    :param data_b: The list of TrackedOrientedBoxes for the viewcar2
+    :return: Result of the association
     """
 
     global t2ta_thresh, hist_size, history, state_space, use_identity
@@ -136,6 +182,26 @@ def t2tassoc(data_a, data_b):
     except IndexError as e:
         print("IndexError during association, likely because not enough data was received yet.")
     print("Finished LIDAR STEP with "+str(number_of_associations)+" associations.")
+    return assoc
+
+
+def non_singletons(data):
+    """
+    Takes the result of an association step, and extracts all non-singleton clusters from
+    :param data: List of Clusters, where each Cluster is a list of TrackedOrientedBox objects that belong to the same
+     tracked object
+    :return: List of TrackedOrientedBoxes that were found in non-singleton clusters in the input
+    """
+    object_list = []
+    for cluster in data:
+        if len(cluster) > 1:
+            for oriented_box in cluster:
+                object_list.append(oriented_box)
+
+    for o in object_list:
+        o.object_id = o.object_id
+
+    return object_list
 
 
 def callback_viewcar2(data):
@@ -245,7 +311,6 @@ def listener(start, speed):
     starttime = '-s ' + str(start)
     starttime_early = '-s ' + str(start+offset_viewcar2)
     FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
-
     # TODO its possible that due to start time or something, this causes them to lose sync before playing
 
     # Start the fascare player
@@ -266,19 +331,22 @@ def setup():
     Setup all necessary variables etc, and start the listener
     """
     # VARIABLE DEFINITIONS
-    global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity
+    global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity, do_ego_plot, do_assoc
     start_time = 0
     play_rate = 0.5
     t2ta_thresh = 13
     hist_size = rospy.Duration(0)
     state_space = (True, False, False, False)
     use_identity = True
+    do_ego_plot = False
+    do_assoc = False
+
+    visual_size = 100
 
     # ---
     # FURTHER SETUP
     global visuals
-    visuals = TrackVisuals(limit=65, neg_limit=-40, limit_y=50, neg_limit_y=-40, color='b')
-    visuals = TrackVisuals(limit=100, neg_limit=-100, color='b')
+    visuals = TrackVisuals(limit=visual_size, neg_limit=-visual_size, color='b')
 
     global history
     history = TrackingHistory()

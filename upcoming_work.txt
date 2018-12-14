@@ -1,6 +1,29 @@
 Upcoming work that has to be done:
 
 # ------------------------
+# New Data (13. Dec)
+# ------------------------
+seems to be working quite ok
+
+currently converting viewcar2 -> odom and that into fascare.ibeo_front_center
+
+TODO:
+	- try to plot ONLY the associated objects (or the other opaque without id? idk) to see if mostly vehicles are associated
+		cant really tell. While the pointclouds overlap (as the cars pass each other) a lot of other objects are associated
+	- check if the conversion makes sense (see above) or if different frames need to be used
+		Seems to make sense, but with the given data its really hard to tell
+				when plotting the 0/0 point of the viewcar2 object:
+		it jumps around A LOT (large distances aswell)
+		there is probably some issue that could be related to the conversion (or the measurements in general)
+	- check for lag (lag def. exists, but without history and with the new scatter fct its bearable)
+
+	- consider adding in an additional plot that plots 0/0 in dark blue and the center of the other objects in yellow
+		so laser objects are blue/yellow, but opaque
+		ego positon is blue/yellow with alpha=1
+		associated objects are red
+
+		--> implemeted with the boolean do_ego_plot (in setup)
+# ------------------------
 # Upcoming 11.Dec
 # (in descending order)
 # ------------------------
@@ -21,6 +44,7 @@ Kalman filter to estimate the offset (the one currently fixed to 4)
 	do some literature research to check what commonly used method for this problem are
 
 	DONT DO THIS FOR NOW
+
 # ------------------------
 # Pre 11.Dec 
 # ------------------------

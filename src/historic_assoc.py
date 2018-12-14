@@ -55,7 +55,7 @@ def callback_tracking(data):
     if plot_bounding_boxes:
         visuals.plot_box_array_rectangles(data.boxes, color='b', append=False)
     else:
-        visuals.plot_box_array(data.boxes, append=False)
+        visuals.scatter_box_array(data.boxes, append=False)
 
     # Append the current information to the history object
     history.add("lidar_0", data.boxes)
@@ -88,7 +88,8 @@ def callback_tracking(data):
                 if plot_bounding_boxes:
                     visuals.plot_box_array_rectangles([track], color="y", append=True)
                 else:
-                    visuals.plot_points_tuple([next_point], append=True)
+                    # visuals.plot_points_tuple([next_point], append=True)
+                    visuals.scatter_box_array([track], color="y", append=True)
             except tf.ExtrapolationException as e:
                 # Extrapolation error, print but keep going (possible just because only one frame was received so far)
                 print(e)
@@ -296,7 +297,7 @@ def listener(args):
         # now start a rosbag play for that filename
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
 
-        play_rate = 0.4  # set the number to whatever you want your play-rate to be
+        play_rate = 1  # set the number to whatever you want your play-rate to be
         # play_rate = 1
         rate = '-r' + str(play_rate)
         # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
@@ -313,7 +314,7 @@ def listener(args):
                 tf_static_data = pickle.load(pklinput)
                 callback_tf_static(tf_static_data)
 
-        player_proc = subprocess.Popen(['rosbag', 'play', rate, time, fname], cwd="data/", stdout=FNULL)
+        player_proc = subprocess.Popen(['rosbag', 'play', rate, time, fname], cwd="data/")#, stdout=FNULL)
 
     plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
 
