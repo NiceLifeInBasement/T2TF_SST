@@ -338,8 +338,8 @@ def setup():
     hist_size = rospy.Duration(0)
     state_space = (True, False, False, False)
     use_identity = True
-    do_ego_plot = False
-    do_assoc = False
+    do_ego_plot = True
+    do_assoc = True
 
     visual_size = 100
 
