@@ -43,6 +43,7 @@ class TrackVisuals:
     window_name = "Tracking Visualization"
     bounding_boxes = []  # List of bounding boxes as tuple (x,y,l,w,id,color)
     rectangle_refs = []  # List of bounding box patch rectangle reference (for deletion)
+    # points = []  # List of plotted points as tuple (x,y,id,color,alpha)  # TODO check if needed
 
     def __init__(self, limit=50, neg_limit=-50, limit_y=None, neg_limit_y=-50, color='b'):
         """
@@ -79,7 +80,7 @@ class TrackVisuals:
         # Needs to be called more than once to preserve it through updates, so store it
         self.annotation_method = self.default_annotation
 
-    def plot_points(self, x_new, y_new, uid, color=[], append=False):
+    def plot_points(self, x_new, y_new, uid, color=[], append=False, alpha=1, annotate=True):
         """
         Plots tracking data in the graph, marking it with annotations of the corresponding UID.
         This resets all previously plotted data, use add_point if you want to add a single point.
@@ -99,6 +100,9 @@ class TrackVisuals:
         :param uid: The numerical identifier of the points (which will be used as a label as well)
         :param color: The colormap for this set. If not specified or "[]", the default color will be used for all points
         :param append: If True, the old points will not be deleted. If False, only the newly passed points will be shown
+        :param alpha: Alpha value of the plotted points (opacity)
+        :param annotate: If True, every point will be annotated with object ids. If False, no such annotation will be
+        done
         """
         # The arrays are all cut down to the size of the smallest one that was passed
         # This always includes a check whether or not color was passed as an argument
@@ -147,21 +151,22 @@ class TrackVisuals:
                 next_x = [self.x[i] for i in next_positions]
                 next_y = [self.y[i] for i in next_positions]
                 # Plot these points using their corresponding color
-                self.ax.scatter(next_x, next_y, c=next_color)
+                self.ax.scatter(next_x, next_y, c=next_color, alpha=alpha)
         else:
             # Else: use the default color
-            self.ax.scatter(self.x, self.y, c=self.def_color)
+            self.ax.scatter(self.x, self.y, c=self.def_color, alpha=alpha)
         self.set_limits()  # Necessary because ax.scatter keeps autoscaling, even with autoscale=False
 
-        # Add new annotations
-        for i, txt in enumerate(self.ids):
-            self.ann_list.append(self.ax.annotate(str(txt), (self.x[i], self.y[i])))
+        if annotate:
+            # Add new annotations
+            for i, txt in enumerate(self.ids):
+                self.ann_list.append(self.ax.annotate(str(txt), (self.x[i], self.y[i])))
 
         # Pause for a very short time to let the graphics redraw
         # plt.pause(0.0000001)
         plt.gcf().canvas.draw()
 
-    def plot_points_tuple(self, points, append=False):
+    def plot_points_tuple(self, points, append=False, alpha=1, annotate=True):
         """
         Performs a plot_points operation, however this takes a list of 4-tuples (x,y,id,c) instead of four arrays that
         represent the points.
@@ -169,6 +174,9 @@ class TrackVisuals:
         This function just unpacks the array
         :param points: This list of points as a list of 4-tuples (x,y,id,c)
         :param append: Whether to append the points or redraw. See plot_points documentation.
+        :param alpha: Alpha value of the plotted points (opacity)
+        :param annotate: If True, every point will be annotated with object ids. If False, no such annotation will be
+        done
         """
         x_pos, y_pos, ids, color_list = [], [], [], []
         for p in points:
@@ -178,14 +186,23 @@ class TrackVisuals:
             color_list.append(p[3])
 
         # pass this data to the plot_points function where it will be plotted
-        self.plot_points(x_pos, y_pos, ids, color_list, append=append)
+        self.plot_points(x_pos, y_pos, ids, color_list, append=append, alpha=alpha, annotate=annotate)
 
-    def plot_box_array(self, boxes, color='b', append=False):
+    def plot_box_array(self, boxes, color='b', append=False, alpha=1, annotate=True):
         """
+        THIS FUNCTION IS OUTDATED.
+        THIS IS BASED ON THE OLD plot_points OPERATION.
+        To plot an array of boxes, please use scatter_box_array.
+        The old plot_points object uses local lists to store all plotted points, which leads to a lack of flexibility
+        in advanced parameters such as alpha.
+
         Performs a plot_points operation based on data extracted from an array of TrackedOrientedBoxes.
         :param boxes: Data in the format of an array of TrackedOrientedBoxes
         :param color: Color to use for the plot (since this is not provided in the TrackedOrientedBox array)
         :param append: Whether to append the points or redraw. See plot_points documentation.
+        :param alpha: Alpha value of the plotted points (opacity)
+        :param annotate: If True, every point will be annotated with object ids. If False, no such annotation will be
+        done
         """
         points = []  # Array where all data points will be stored
         for tracked_box in boxes:
@@ -198,7 +215,53 @@ class TrackVisuals:
             points.append(t)  # Append this information to the list of points
 
         # pass this data on to the plot_points_tuple function where it will be processed further
-        self.plot_points_tuple(points=points, append=append)
+        self.plot_points_tuple(points=points, append=append, alpha=alpha, annotate=annotate)
+
+    def scatter_box_array(self, boxes, color='b', append=False, alpha=1, annotate=True):
+        """
+        New and updated function that should be used to scatter plot an array of boxes.
+
+        :param boxes: Data in the format of an array of TrackedOrientedBoxes
+        :param color: Color to use for the plot (since this is not provided in the TrackedOrientedBox array)
+        :param append: Whether to append the points or redraw the entire plot.
+        :param alpha: Alpha value of the plotted points (opacity)
+        :param annotate: If True, every point will be annotated with object ids. If False, no such annotation will be
+        done
+        """
+        x = []
+        y = []
+        ids = []
+        for box in boxes:
+            x.append(box.box.center_x)
+            y.append(box.box.center_y)
+            ids.append(box.object_id)
+
+        # Remove annotations
+        # Only do this if you don't append to the data, if you do append keep all annotations for the boxes
+        # because: annotate = False: ignore everything about annotations
+        if (not append) and annotate:
+            for i, a in enumerate(self.ann_list):
+                try:
+                    a.remove()
+                except ValueError:
+                    # In case some multi-threading has already cleared all the data, don't attempt to remove it
+                    pass
+            self.ann_list[:] = []  # clear the annotation list
+
+        if not append:
+            plt.cla()
+
+        self.ax.scatter(x, y, color=color, alpha=alpha)
+
+        if annotate:
+            # Add new annotations
+            for i, txt in enumerate(ids):
+                self.ann_list.append(self.ax.annotate(str(txt), (x[i], y[i])))
+
+        plt.xlim(self.neg_limit, self.limit)
+        plt.ylim(self.neg_limit_y, self.limit_y)
+
+        plt.gcf().canvas.draw()
 
     def plot_box_array_rectangles(self, boxes, color='b', append=False):
         """
