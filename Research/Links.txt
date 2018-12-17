@@ -184,6 +184,9 @@ https://ieeexplore.ieee.org/abstract/document/6856570
     Nutzen CAM Messages in 2 autos um blind spot detection bei überholmanövern kooperativ zu realisieren
     interessanter anwendungsfall von CAM nachrichten
 
+http://ko-fas.de/files/abschluss/ko-fas_a2_3_communication_for_cooperative_perception.pdf
+ko-fas.de/41-0-Ko-PER---Kooperative-Pearzeption.html
+    informationen zu CAM und CPM nachrichten, guter überblick
 
 
 # --- T2TA ---
