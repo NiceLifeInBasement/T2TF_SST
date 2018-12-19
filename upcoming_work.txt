@@ -6,6 +6,8 @@ potential improvements to the T2TA algorithm?
 		positional distance will usually be larger than velocity diff)
 		--> potentially come up with a different distance measurement to be used
 
+	- does not involve gating at all
+		matrix size could be reduced if gating was somehow implemented in the algo
 # ------------------------
 # New Data (13. Dec)
 # ------------------------
