@@ -53,7 +53,7 @@ def callback_tracking(data):
 
     global plot_bounding_boxes
     if plot_bounding_boxes:
-        visuals.plot_box_array_rectangles(data.boxes, color='b', append=False)
+            visuals.plot_box_array_rectangles(data.boxes, color='b', append=False)
     else:
         visuals.scatter_box_array(data.boxes, append=False)
 
@@ -141,34 +141,40 @@ def callback_tracking(data):
                     avg_dist.append(dist)
                     # print("No. assoc:"+str(len(avg_dist))+"\t Avg Distance: "+str(sum(avg_dist)/len(avg_dist)))
 
-                # TODO the entire following if block is for dynamic offset changing, WHICH SHOULD NOT HAPPEN!
-                if len(a) == 2:  # TESTING INCREMENTAL OFFSET
-                    # found an association between the two tracks
-                    dist = t2t_distance_box(box_a=a[0], box_b=a[1], state_space=state_space, use_identity=use_identity)
-                    # TODO hardcoding a selection for id=100
-                    # test_box_a will gets its value changed
-                    if a[0].object_id == 100:
-                        test_box_a = copy.deepcopy(a[0])
-                        test_box_b = copy.deepcopy(a[1])
-                    else:
-                        test_box_b = copy.deepcopy(a[0])
-                        test_box_a = copy.deepcopy(a[1])
-                    # calc dist_up
-                    test_box_a.box.center_x += c2x_offset_test
-                    dist_up = t2t_distance_box(box_a=test_box_a, box_b=test_box_b,
-                                               state_space=state_space, use_identity=use_identity)
-                    # calc dist_down (subtract c2x_offset_test twice, because you added it once previously)
-                    test_box_a.box.center_x -= 2*c2x_offset_test
-                    dist_down = t2t_distance_box(box_a=test_box_a, box_b=test_box_b,
-                                               state_space=state_space, use_identity=use_identity)
-                    if dist_up < dist:
-                        # found an improvement by increasing the distance
-                        c2x_offset_x += c2x_offset_test
-                        print("Offset++ ->"+str(c2x_offset_x)+"\t distance -:"+str(dist-dist_up))
-                    if dist_down < dist:
-                        # found an improvement by increasing the distance
-                        c2x_offset_x -= c2x_offset_test
-                        print("Offset-- ->" + str(c2x_offset_x) + "\t distance -:" + str(dist - dist_down))
+                # DYNAMIC OFFSET CHANGING
+                # dynamically modify the offset of the c2x vehicle
+                # in every step, check if reducing or increasing the offset by c2x_offset_test will improve the
+                # distance between the 2 associated objects
+                # if yes, modify the offset parameter by that value
+                if c2x_offset_test != 0.0:
+                    if len(a) == 2:  # TESTING INCREMENTAL OFFSET
+                        # found an association between the two tracks
+                        dist = t2t_distance_box(box_a=a[0], box_b=a[1], state_space=state_space, use_identity=use_identity)
+                        # id == 100 in the c2x data for the ego-vehicle --> compare to that
+                        # test_box_a will gets its value changed
+                        if a[0].object_id == 100:
+                            test_box_a = copy.deepcopy(a[0])
+                            test_box_b = copy.deepcopy(a[1])
+                        else:
+                            test_box_b = copy.deepcopy(a[0])
+                            test_box_a = copy.deepcopy(a[1])
+                        # calc dist_up
+                        test_box_a.box.center_x += c2x_offset_test
+                        dist_up = t2t_distance_box(box_a=test_box_a, box_b=test_box_b,
+                                                   state_space=state_space, use_identity=use_identity)
+                        # calc dist_down (subtract c2x_offset_test twice, because you added it once previously)
+                        test_box_a.box.center_x -= 2*c2x_offset_test
+                        dist_down = t2t_distance_box(box_a=test_box_a, box_b=test_box_b,
+                                                     state_space=state_space, use_identity=use_identity)
+                        if dist_up < dist:
+                            # found an improvement by increasing the distance
+                            c2x_offset_x += c2x_offset_test
+                            print("Offset++ ->"+str(c2x_offset_x)+"\t distance -:"+str(dist-dist_up))
+                        if dist_down < dist:
+                            # found an improvement by increasing the distance
+                            c2x_offset_x -= c2x_offset_test
+                            print("Offset-- ->" + str(c2x_offset_x) + "\t distance -:" + str(dist - dist_down))
+                # END OF DYNAMIC CHANGING
         except ValueError as e:
             print("ValueError during association")
             # print(e)
@@ -181,6 +187,9 @@ def callback_tracking(data):
 def callback_tf_static(data):
     """
     Acquires static tf data and adds it to the transformer object.
+
+    Can also be used to add "normal" tf data to the transformer, but will rewrite the timestamp of such data to
+    rospy.Time(0)
     """
     global transformer
 
@@ -249,7 +258,7 @@ def callback_c2x_tf(data):
     # They also have changed x/y data based on velocity, so that the track doesn't need to be reused later on with the
     # outdated coordinates and instead can work with "updated" coordinates for time steps that are not included in the
     # real c2x messages.
-    add_points = 4  # how many "fake" points should be added between this and the next measurement
+    add_points = 4  # how many "fake" points should be added between this and the next measuremen
     # TODO consider changing the timing/number of fakes depending on the time diff between this data and the last data
     if len(data.tracks) > 0:  # only do the following if the track contained something
         for i in range(add_points):
@@ -258,6 +267,7 @@ def callback_c2x_tf(data):
             # now change the timestamp of this new data
             # c2x data arrives every 0.2 seconds, so to fit an additional 4 measurements in there
             time_shift = rospy.Duration(0, 40000000)  # increase by 1/20 of a sec
+            # TODO dynamically adjust time_shift based on the number add_points
             fake_data.header.stamp = fake_data.header.stamp + time_shift
             for track in fake_data.tracks:
                 track.box.header.stamp = track.box.header.stamp + time_shift
@@ -370,9 +380,10 @@ def setup(args=None):
     c2x_offset_y = 0
 
     c2x_offset_test = 0.0  # value that will be added+subtracted in every step to improve the above offset_x
+    # set to 0.0 if you don't want dynamic offset changing
 
     global plot_bounding_boxes
-    plot_bounding_boxes = False
+    plot_bounding_boxes = False  # Set to True if you want to plot bounding boxes, False for a scatterplot of objects
 
     # Check which arguments should be used (parameter if possible, else sys.argv)
     if args is None:

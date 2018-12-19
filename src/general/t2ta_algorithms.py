@@ -54,7 +54,6 @@ class TrackCluster:
 
 def t2ta_collected(tracks, threshold, distance):
     """
-    TODO check if tracks is actually TOBArray or TOB[] (seems like the latter, needs doc fix)
     First implementation of the Multisensor Track-To-Track Association Algorithm presented in the following paper:
     https://hal.archives-ouvertes.fr/hal-00740787/document.
 
@@ -66,8 +65,8 @@ def t2ta_collected(tracks, threshold, distance):
         (TrackedOrientedBox, TrackedOrientedBox) --> Float
     You can also use a Function from the class SimilarityChecker, since these functions also take two OrientedBoxes
     as their parameter (and the only other parameter is the time diff, which defaults to 0)
-    :param tracks: An array of TrackedOrientedBoxArrays. Each entry should contain the TrackedOrientedBoxArray that
-                   represents the tracking of a single sensor in the current time step.
+    :param tracks: An array of arrays of TrackedOrientedBoxes. Each entry should contain the array of
+                    TrackedOrientedBoxes that represents the tracking of a single sensor in the current time step.
     :param threshold: The maximum distance threshold. The threshold symbolizes a gate out of which we assume that the
                       two tracks cannot originate from the same target
     :param distance: Function that calculates the distance between two given tracks. Should be of type:
@@ -206,8 +205,6 @@ def t2ta_collected(tracks, threshold, distance):
         # d) Set to max_val cells in the line lin and the ones in the column col, that correspond to tracks reported by
         #    the two concerned sensors
 
-        # TODO: not sure if the id comparison is correct, or if different values need to be compared. Double check!
-
         # The two concerned sensors have ids list_origin[lin] and list_origin[col]
         source_id_A = list_origin[lin]
         source_id_B = list_origin[col]
@@ -280,9 +277,8 @@ def t2ta_historic(obj_ids, sensor_names, threshold, history_size, history, time,
         for next_obj_id in next_obj_id_list:
             # Acquire a single track (use [0] at the end, because the function returns a list containing 1 object)
             next_track_list = history.get_timestep(next_obj_id, next_sensor_name, time=time, hist_size=rospy.Duration(0))
-            # TODO sometimes, this returns an empty list for some reason
+            # if for this no history entries were found, return an empty list:
             if len(next_track_list) == 0:
-                # If an empty list was found for this, return an empty cluster list to prevent IndexErrors
                 return []
             next_single_track = next_track_list[0]
             # Append this tracks to the list of tracks relevant for its sensor

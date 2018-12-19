@@ -236,6 +236,7 @@ https://ieeexplore.ieee.org/abstract/document/8107047
     "Comparative study of data association approaches for multiple vehicle tracking"
     Explains multiple approaches and compares them
     only skimmed this, compares 3 algorithms incl. some implementation details
+    references the HAL algorithm, but not in detail
 
 https://www.spiedigitallibrary.org/conference-proceedings-of-spie/9596/959609/Track-to-track-association-for-object-matching-in-an-inter/10.1117/12.2187108.short?SSO=1
     "Track-to-track association for object matching in an inter-vehicle communication system"

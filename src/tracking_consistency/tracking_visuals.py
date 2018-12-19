@@ -43,7 +43,6 @@ class TrackVisuals:
     window_name = "Tracking Visualization"
     bounding_boxes = []  # List of bounding boxes as tuple (x,y,l,w,id,color)
     rectangle_refs = []  # List of bounding box patch rectangle reference (for deletion)
-    # points = []  # List of plotted points as tuple (x,y,id,color,alpha)  # TODO check if needed
 
     def __init__(self, limit=50, neg_limit=-50, limit_y=None, neg_limit_y=-50, color='b'):
         """
@@ -319,7 +318,8 @@ class TrackVisuals:
         # Plot all bounding boxes
         for box in self.center_to_bottom_left(boxes):
             x, y, l, w , object_id, color = box  # Extract current relevant information
-            # TODO check width/height with length/width (using width=l because the display is rotated 90 degrees)
+            # Width/height vs box.{length/width} may need double checking, depending on the rotation
+            # (rotation of box size is currently not implemented)
             vis_box = patches.Rectangle((x, y), width=l, height=w, angle=0.0,
                                         linewidth=1, edgecolor=color, facecolor=color, alpha=0.3, fill=True)
             self.rectangle_refs.append(vis_box)
@@ -338,7 +338,6 @@ class TrackVisuals:
         adjusted = []
         for box in boxes:
             x, y, l, w, object_id, color = box  # Extract current relevant information
-            # TODO check length/width <-> xy
             x_new = x-w/2
             y_new = y-l/2
             box_new = (x_new, y_new, l, w, object_id, color)

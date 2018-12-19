@@ -213,8 +213,8 @@ def callback_viewcar2(data):
     # data: TrackedLaserScan
     global transformer_viewcar2
 
-    src_id = "ibeo_front_center"  # Transform data from this...
-    dest_id = "odom"  # ... to this. TODO find out which frame this needs to be (odom/gps_antenna?)
+    src_id = "ibeo_front_center"  # Transform data from this frame...
+    dest_id = "odom"  # ... to this.   # Using odom, but might need to use some other global frame?
     tracks = data.boxes
     head = SimulatedVehicle.create_def_header(frame_id=src_id)
     for track in tracks:
@@ -306,12 +306,12 @@ def listener(start, speed):
 
     # viewcar2 starts slightly before fascare
     offset_viewcar2 = 2.58000016212  # THIS VALUE NEEDS TO BE EXACTLY THIS; THIS IS THE DIFF OF START TIMES!
+    # the above value should only be modified if delay due to rosbag play launching causes them to lose sync again
 
     rate = '-r' + str(speed)
     starttime = '-s ' + str(start)
     starttime_early = '-s ' + str(start+offset_viewcar2)
     FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
-    # TODO its possible that due to start time or something, this causes them to lose sync before playing
 
     # Start the fascare player
     fname = "roundabout_fascare_later.bag"
