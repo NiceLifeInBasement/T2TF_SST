@@ -1,5 +1,11 @@
 Upcoming work that has to be done:
 
+potential improvements to the T2TA algorithm?
+	- distance calc:
+		if you use velocity + position for distance, then the velocity will have lower impact than position (assuming that 
+		positional distance will usually be larger than velocity diff)
+		--> potentially come up with a different distance measurement to be used
+
 # ------------------------
 # New Data (13. Dec)
 # ------------------------
