@@ -35,12 +35,37 @@ import tf_conversions as tf_c
 import pickle
 
 
+def velocity_cut(data):
+    """
+    Takes a TrackedLaserScan and removes all objects from it that have a velocity that is lower than the global
+    variable threshold "velo_threshold"
+    :param data: TrackedLaserScan of data to be cut
+    :return: TrackedLaserScan that contains only objects that meet the above threshold
+    """
+    global velo_treshold
+    cut_data = copy.deepcopy(data)
+    to_remove = []
+    for tracked_box in cut_data.boxes:
+        velocity = (tracked_box.box.velocity_x ** 2 + tracked_box.box.velocity_y ** 2) ** 0.5
+        if velocity < velo_threshold:
+            to_remove.append(tracked_box)
+
+    for rm in to_remove:
+        cut_data.boxes.remove(rm)
+
+    return cut_data
+
+
 def callback_fascare(data):
     """
     Callback function for the fascare object.
 
     In addition to the received data, data from the viewcar2 data buffer is used
     """
+    global do_velo_cut
+    if do_velo_cut:
+        data = velocity_cut(data)
+
     global viewcar2_odom_data, visuals, transformer_fascare, do_ego_plot
     try:
         viewcar2_odom_data
@@ -48,11 +73,15 @@ def callback_fascare(data):
         # Alternativly: consider a quick display of the information
         return  # No viewcar2 data was received so far, simply skip this step
 
+    if len(data.boxes)==0:
+        # no boxes included in current message (possibly due to velocity cutting)
+        return
+
     transparency = 0.2  # Used across all plots that should be transparant
     focus_association = True  # If True: No annotation for the rest of the plot, extra plot for associated objects
 
     visuals.scatter_box_array(data.boxes, append=False, color="b", alpha=transparency, annotate=(not focus_association))
-    vc_data = viewcar2_odom_data[-1]
+    vc_data = viewcar2_odom_data[-1]  # TODO maybe do this based on timestamp instead of -1
 
     # Transform the last set of viewcar2_data into this frames ibeo_front_center
     src_id = "odom"
@@ -100,9 +129,12 @@ def callback_fascare(data):
             if do_ego_plot:
                 ego_point = PointStamped(header=head, point=Point(x=0, y=0, z=0))
                 ego_point.header.stamp = rospy.Time(0)
+                ego_point.header.frame_id = dest_id  # Start in frame dest_id=ibeo_front_center of viewcar2
                 global transformer_viewcar2
-                ego_point = transformer_viewcar2.transformPoint(target_frame=src_id, ps=point)
-                ego_point = transformer_fascare.transformPoint(target_frame=dest_id, ps=point)
+                # Transform into src_id = "odom" first (from the viewcar2 ibeo_front_center)
+                ego_point = transformer_viewcar2.transformPoint(target_frame=src_id, ps=ego_point)
+                # and then use the other transformer to move it back into "ibeo_front_center", but for fascare
+                ego_point = transformer_fascare.transformPoint(target_frame=dest_id, ps=ego_point)
         # For all exceptions: print them, but keep going instead of stopping everything
         except tf.ExtrapolationException as e:
             # Extrapolation error, print but keep going (possible just because only one frame was received so far)
@@ -211,6 +243,23 @@ def callback_viewcar2(data):
     can process the given information
     """
     # data: TrackedLaserScan
+
+    global do_velo_cut
+    if do_velo_cut:
+        data = velocity_cut(data)
+
+    if len(data.boxes) == 0:
+        # empty, return
+        return
+
+    global append_ego
+    if append_ego:
+        ego_box = copy.deepcopy(data.boxes[0])  # copy any box
+        ego_box.object_id = -2
+        ego_box.box.center_x = 0
+        ego_box.box.center_y = 0
+        data.boxes.append(ego_box)
+
     global transformer_viewcar2
 
     src_id = "ibeo_front_center"  # Transform data from this frame...
@@ -331,15 +380,22 @@ def setup():
     Setup all necessary variables etc, and start the listener
     """
     # VARIABLE DEFINITIONS
-    global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity, do_ego_plot, do_assoc
-    start_time = 0
-    play_rate = 0.5
+    global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity, do_ego_plot, do_assoc, velo_threshold, do_velo_cut
+    start_time = 200
+    play_rate = 0.3
     t2ta_thresh = 13
     hist_size = rospy.Duration(0)
     state_space = (True, False, False, False)
     use_identity = True
     do_ego_plot = True
     do_assoc = True
+    velo_threshold = 3  # Threshold for velocity cutoff (everything with smaller velocity will be thrown away)
+    #   4 is pretty rough (empty at times) but clears everything up nicely
+    #   2.5 has some clutter remaining, but still does fine overall
+    do_velo_cut = True  # True, if velocity should be cut down using the above threshold
+
+    global append_ego
+    append_ego = True  # If true, the viewcar2 will append an ego position with coord 0,0 and id=-2
 
     visual_size = 100
 
