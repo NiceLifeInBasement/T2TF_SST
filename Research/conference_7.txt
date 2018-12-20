@@ -1,0 +1,13 @@
+# Notes re: siebte tc (20.12)
+1.
+    neue daten werden potenziell in der woche vom 14-17.1 aufgenommen
+    werden dann spontan entscheiden was wir mit denen machen (ob wir sie nutzen etc)
+
+2.
+    in den aktuellen daten: filtern nach geschwindigkeit mit velocity
+    siehe auch die farben in tracked_objects/segmentation (-> rviz!)
+
+3.
+    viewcar2 hat bessere datenqualität als fascare
+    --> viewcar2 als fusion center?
+

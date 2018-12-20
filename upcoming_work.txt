@@ -1,5 +1,8 @@
 Upcoming work that has to be done:
 
+add the visualization in rviz
+	maybe by publishing a marker array
+
 potential improvements to the T2TA algorithm?
 	- distance calc:
 		if you use velocity + position for distance, then the velocity will have lower impact than position (assuming that 
@@ -8,6 +11,7 @@ potential improvements to the T2TA algorithm?
 
 	- does not involve gating at all
 		matrix size could be reduced if gating was somehow implemented in the algo
+
 # ------------------------
 # New Data (13. Dec)
 # ------------------------
@@ -70,7 +74,7 @@ SIMULATION OF DATA
 
 REAL DATA	
 	c2x vehicle display is not working correctly (jumping around etc)
-		--> fixed for the most part by implementing fake data + velocity rotation 
+		--> fixed for the most part by impl   ementing fake data + velocity rotation 
 		there are still some issues left, the c2x data data doesn't match the lidar good enough for association in scenarios
 		where cars are very close to each other
 		--> Added in a flat offset for the x-axis (on the c2x data, value ~4)
@@ -171,7 +175,7 @@ FUTURE WORK/IDEAS
 			key difference: here, rotation and translation is acquired by means of point matching, instead of just
 					improved
 	alternativly, work with a per-object offset (every object that was associated at least once gets such an offset)
-
+   
 		--> Implemented this, but you should not be doing this.
 			Even the fixed offset would be better (easier to explain) than this
 
