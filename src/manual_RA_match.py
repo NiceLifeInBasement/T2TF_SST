@@ -82,7 +82,10 @@ def callback_fascare(data):
     transparency = 0.2  # Used across all plots that should be transparant
     focus_association = True  # If True: No annotation for the rest of the plot, extra plot for associated objects
 
-    visuals.scatter_box_array(data.boxes, append=False, color="b", alpha=transparency, annotate=(not focus_association))
+    global do_visual_plot
+    if do_visual_plot:
+        visuals.scatter_box_array(data.boxes, append=False, color="b", alpha=transparency, annotate=(not focus_association))
+
     vc_data = viewcar2_odom_data[-1]  # TODO maybe do this based on timestamp instead of -1
 
     # Transform the last set of viewcar2_data into this frames ibeo_front_center
@@ -116,7 +119,9 @@ def callback_fascare(data):
             print(e)
     vc_data.header.frame_id = dest_id
 
-    visuals.scatter_box_array(vc_data.boxes, append=True, color="y", alpha=transparency, annotate=(not focus_association))
+    global do_visual_plot
+    if do_visual_plot:
+        visuals.scatter_box_array(vc_data.boxes, append=True, color="y", alpha=transparency, annotate=(not focus_association))
 
     if do_ego_plot:
         # Plot the ego objects with alpha=1
@@ -152,8 +157,10 @@ def callback_fascare(data):
         ego_viewcar2.object_id = -2
 
         # acquired 2 objects that can now be plotted
-        visuals.scatter_box_array([ego_fascare], append=True, color="b", alpha=1, annotate=False)
-        visuals.scatter_box_array([ego_viewcar2], append=True, color="y", alpha=1, annotate=False)
+        global do_visual_plot
+        if do_visual_plot:
+            visuals.scatter_box_array([ego_fascare], append=True, color="b", alpha=1, annotate=False)
+            visuals.scatter_box_array([ego_viewcar2], append=True, color="y", alpha=1, annotate=False)
     # ---
 
     # now to the association:
@@ -165,7 +172,8 @@ def callback_fascare(data):
         history.add("viewcar2", vc_data.boxes)
         assoc = t2tassoc(data.boxes, vc_data.boxes)
 
-        if focus_association:  # Extra plot for associated objects
+        global do_visual_plot
+        if do_visual_plot and focus_association:  # Extra plot for associated objects
             assoc_boxes = non_singletons(assoc)
             visuals.scatter_box_array(assoc_boxes, append=True, color="r", alpha=1, annotate=True)
 
@@ -178,6 +186,7 @@ def callback_fascare(data):
     marker_color = (1, 1, 0, 0.5)  # green boxes for the viewcar boxes
     viewcar2_markers = vis_pub.boxes_to_marker_array(vc_data.boxes, marker_color)
     marker_color = (1, 0, 0, 1)  # red, non-opaque boxes for the visualization
+    assoc_boxes = non_singletons(assoc)
     assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
 
     all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers, assoc_markers])
@@ -388,7 +397,11 @@ def listener(start, speed):
     fname = "roundabout_viewcar2_affix_early.bag"
     viewcar2_proc = subprocess.Popen(['rosbag', 'play', rate, starttime_early, fname], cwd="data/", stdout=FNULL)
 
-    plt.show()  # Start the graphics. This stops execution until the matplotlib window is closed
+    global do_visual_plot
+    if do_visual_plot:
+        plt.show()  # Start the graphics. This stops execution until the matplotlib window is closed
+    else:
+        rospy.spin()
 
     # Kill the processes after the matplotlib window was closed
     fascare_proc.terminate()
@@ -417,12 +430,15 @@ def setup():
     global append_ego
     append_ego = True  # If true, the viewcar2 will append an ego position with coord 0,0 and id=-2
 
+    global do_visual_plot
+    do_visual_plot = False  # if set to false, no visualization code will be called
     visual_size = 100
 
     # ---
     # FURTHER SETUP
     global visuals
-    visuals = TrackVisuals(limit=visual_size, neg_limit=-visual_size, color='b')
+    if do_visual_plot:
+        visuals = TrackVisuals(limit=visual_size, neg_limit=-visual_size, color='b')
 
     global history
     history = TrackingHistory()
