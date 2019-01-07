@@ -33,6 +33,8 @@ from general.t2t_history import *
 import copy
 import tf_conversions as tf_c
 import pickle
+from visualization_msgs.msg import MarkerArray
+import general.visual_publishing as vis_pub
 
 
 def velocity_cut(data):
@@ -73,7 +75,7 @@ def callback_fascare(data):
         # Alternativly: consider a quick display of the information
         return  # No viewcar2 data was received so far, simply skip this step
 
-    if len(data.boxes)==0:
+    if len(data.boxes) == 0:
         # no boxes included in current message (possibly due to velocity cutting)
         return
 
@@ -166,6 +168,20 @@ def callback_fascare(data):
         if focus_association:  # Extra plot for associated objects
             assoc_boxes = non_singletons(assoc)
             visuals.scatter_box_array(assoc_boxes, append=True, color="r", alpha=1, annotate=True)
+
+    # ---
+
+    # Visualize in MarkerArrays for rviz:
+    global vis_publisher
+    marker_color = (0, 0, 1, 0.5)  # blue boxes for the fascar boxes
+    fascar_markers = vis_pub.boxes_to_marker_array(data.boxes, marker_color)
+    marker_color = (1, 1, 0, 0.5)  # green boxes for the viewcar boxes
+    viewcar2_markers = vis_pub.boxes_to_marker_array(vc_data.boxes, marker_color)
+    marker_color = (1, 0, 0, 1)  # red, non-opaque boxes for the visualization
+    assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
+
+    all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers, assoc_markers])
+    vis_publisher.publish(vis_pub.delete_with_first(all_markers))
 
 
 def t2tassoc(data_a, data_b):
@@ -333,6 +349,10 @@ def listener(start, speed):
     rospy.Subscriber("/tf", TFMessage, callback_tf_fascare)
     rospy.Subscriber("/tf_viewcar2", TFMessage, callback_tf_viewcar2)
 
+    # setup a publisher for marker arrays
+    global vis_publisher
+    vis_publisher = rospy.Publisher("assoc_markers", MarkerArray, queue_size=100)
+
     # Create global variables for the transformers
     global transformer_fascare, transformer_viewcar2
     transformer_viewcar2 = tf.TransformerROS(True)
@@ -381,8 +401,8 @@ def setup():
     """
     # VARIABLE DEFINITIONS
     global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity, do_ego_plot, do_assoc, velo_threshold, do_velo_cut
-    start_time = 200
-    play_rate = 0.3
+    start_time = 10
+    play_rate = 0.2
     t2ta_thresh = 13
     hist_size = rospy.Duration(0)
     state_space = (True, False, False, False)
