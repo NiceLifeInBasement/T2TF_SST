@@ -186,12 +186,12 @@ def callback_fascare(data):
     marker_color = (1, 1, 0, 0.5)  # green boxes for the viewcar boxes
     viewcar2_markers = vis_pub.boxes_to_marker_array(vc_data.boxes, marker_color)
     marker_color = (1, 0, 0, 1)  # red, non-opaque boxes for the visualization
-    assoc_boxes = non_singletons(assoc)
+    assoc_boxes = avg_fusion(assoc)  # use this to average between assoc results and display that
+    # assoc_markers = non_singletons(assoc)  # use this two display 2 boxes (only association overlay)
     assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
 
     all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers, assoc_markers])
     vis_publisher.publish(vis_pub.delete_with_first(all_markers))
-
 
 def t2tassoc(data_a, data_b):
     """
@@ -259,6 +259,40 @@ def non_singletons(data):
         o.object_id = o.object_id
 
     return object_list
+
+
+def avg_fusion(data):
+    """
+    Takes the result of an association step, removes all singleton clusters, and creates a list of TrackedOrientedBoxes.
+    Every box in this list corresponds to the average of one of the non singleton clusters in the original data.
+    :param data: List of Clusters, where each Cluster is a list of TrackedOrientedBox objects that belong to the same
+     tracked object
+    :return: List of TrackedOrientedBoxes representing the average of non-singleton clusters of the original data
+    """
+    avg_boxes = []
+    non_single = []
+    # First, remove all clusters:
+    for cluster in data:
+        if len(cluster) > 1:
+            non_single.append(cluster)
+
+    # Now, average each cluster
+    for cluster in non_single:
+        next_box = copy.deepcopy(cluster[0])
+        next_box.object_id *= 100  # Append 2 0's to the object id
+        # Currently, only doing x/y averaging
+        x = 0
+        y = 0
+        for oriented_box in cluster:
+            x += oriented_box.box.center_x
+            y += oriented_box.box.center_y
+        x /= len(cluster)
+        y /= len(cluster)
+        next_box.box.center_x = x
+        next_box.box.center_y = y
+        avg_boxes.append(next_box)
+
+    return avg_boxes
 
 
 def callback_viewcar2(data):
@@ -415,7 +449,7 @@ def setup():
     # VARIABLE DEFINITIONS
     global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity, do_ego_plot, do_assoc, velo_threshold, do_velo_cut
     start_time = 10
-    play_rate = 0.2
+    play_rate = 0.25
     t2ta_thresh = 13
     hist_size = rospy.Duration(0)
     state_space = (True, False, False, False)
