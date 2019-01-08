@@ -3,11 +3,8 @@
 speed up the entire code? (maybe enable dropping the "normal" visuals in favor of pure rviz visualization?)
 	also test if the markerarray generation causes performance loss?
 
-improve the display of association results in rviz
-	any way to display only a single point instead of overlaying both points all the time?
-
 consider adding in a fusion and publishing the fusion results instead of "just" association results
-	"fusion" --> average and display that instead of the pure results, also gets rid of the double visualization
+	"fusion" --> average and display that instead of the pure results, also gets rid of the double visualization	
 
 add the visualization in rviz
 	maybe by publishing a marker array
