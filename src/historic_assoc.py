@@ -38,7 +38,7 @@ import tf_conversions as tf_c
 import pickle
 from visualization_msgs.msg import MarkerArray
 import general.visual_publishing as vis_pub
-
+from manual_RA_match import non_singletons
 
 # --- Definiton of global variables
 # [...]
@@ -189,22 +189,25 @@ def callback_tracking(data):
             print("IndexError during association, likely because not enough data was received yet.")
 
     # Visualize in MarkerArrays for rviz:
-    global vis_publisher
-    marker_color = (0, 0, 1, 0.5)  # blue boxes for the lidar boxes
-    lidar_markers = vis_pub.boxes_to_marker_array(data.boxes, marker_color)
-    marker_color = (1, 1, 0, 0.5)  # yellow boxes for the c2x boxes
-    c2x_markers = vis_pub.boxes_to_marker_array(c2x_selection.tracks, marker_color)
-    for marker in c2x_markers.markers:  # need to fix the frame id to prevent unnecessary transform
-        marker.header.frame_id = "ibeo_front_center"
-        # TODO this shouldn't be necessary, for some reason the markers are in "odom" not "ibeo_front_center"
-    # assoc not used so far
-    marker_color = (1, 0, 0, 1)  # red, non-opaque boxes for the visualization of assoc/fusion
-    # assoc_boxes = avg_fusion(assoc)  # use this to average between assoc results and display that
-    # assoc_markers = non_singletons(assoc)  # use this two display 2 boxes (only association overlay)
-    # assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
+    if c2x_selection is not None:
+        global vis_publisher
+        marker_color = (0, 0, 1, 0.5)  # blue boxes for the lidar boxes
+        lidar_markers = vis_pub.boxes_to_marker_array(data.boxes, marker_color)
+        marker_color = (1, 1, 0, 0.5)  # yellow boxes for the c2x boxes
+        c2x_markers = vis_pub.boxes_to_marker_array(c2x_selection.tracks, marker_color)
+        for marker in c2x_markers.markers:  # need to fix the frame id to prevent unnecessary transform
+            marker.header.frame_id = "ibeo_front_center"
+            # TODO this shouldn't be necessary, for some reason the markers are in "odom" not "ibeo_front_center"
+        # assoc not used so far
+        marker_color = (1, 0, 0, 1)  # red, non-opaque boxes for the visualization of assoc/fusion
+        # assoc_boxes = avg_fusion(assoc)  # use this to average between assoc results and display that
+        assoc_boxes = non_singletons(assoc)  # use this two display 2 boxes (only association overlay)
+        assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
 
-    all_markers = vis_pub.merge_marker_array([lidar_markers, c2x_markers])  # merge markers
-    vis_publisher.publish(vis_pub.delete_with_first(all_markers))  # publish
+        all_markers = vis_pub.merge_marker_array([lidar_markers, c2x_markers, assoc_markers])  # merge markers
+        vis_publisher.publish(vis_pub.delete_with_first(all_markers))  # publish
+
+    # ---  finish
     lock.release()
 
 
@@ -335,7 +338,7 @@ def listener(args):
         # now start a rosbag play for that filename
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
 
-        play_rate = 0.2  # set the number to whatever you want your play-rate to be
+        play_rate = 0.1  # set the number to whatever you want your play-rate to be
         # play_rate = 1
         rate = '-r' + str(play_rate)
         # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
@@ -343,7 +346,7 @@ def listener(args):
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 10  # time at which the bag should start playing
+        start_time = 9  # time at which the bag should start playing
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder

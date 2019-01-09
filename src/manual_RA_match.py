@@ -193,6 +193,7 @@ def callback_fascare(data):
     all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers, assoc_markers])
     vis_publisher.publish(vis_pub.delete_with_first(all_markers))
 
+
 def t2tassoc(data_a, data_b):
     """
     Associates the two datasets a and b (in the form of Arrays of trackedOrientedBoxes)
@@ -449,15 +450,16 @@ def setup():
     # VARIABLE DEFINITIONS
     global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity, do_ego_plot, do_assoc, velo_threshold, do_velo_cut
     start_time = 10
-    play_rate = 0.25
+    play_rate = 0.1
     t2ta_thresh = 13
     hist_size = rospy.Duration(0)
     state_space = (True, False, False, False)
     use_identity = True
     do_ego_plot = True
     do_assoc = True
-    velo_threshold = 3  # Threshold for velocity cutoff (everything with smaller velocity will be thrown away)
+    velo_threshold = 0  # Threshold for velocity cutoff (everything with smaller velocity will be thrown away)
     #   4 is pretty rough (empty at times) but clears everything up nicely
+    #   3 was used widely during testing, works ok but leaves a bit of clutter
     #   2.5 has some clutter remaining, but still does fine overall
     do_velo_cut = True  # True, if velocity should be cut down using the above threshold
 
