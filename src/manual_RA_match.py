@@ -191,6 +191,7 @@ def callback_fascare(data):
     assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
 
     all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers, assoc_markers])
+    # all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers])  # skip assoc markers
     vis_publisher.publish(vis_pub.delete_with_first(all_markers))
 
 
@@ -457,7 +458,7 @@ def setup():
     use_identity = True
     do_ego_plot = True
     do_assoc = True
-    velo_threshold = 0  # Threshold for velocity cutoff (everything with smaller velocity will be thrown away)
+    velo_threshold = 3  # Threshold for velocity cutoff (everything with smaller velocity will be thrown away)
     #   4 is pretty rough (empty at times) but clears everything up nicely
     #   3 was used widely during testing, works ok but leaves a bit of clutter
     #   2.5 has some clutter remaining, but still does fine overall

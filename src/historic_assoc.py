@@ -43,6 +43,7 @@ from manual_RA_match import non_singletons
 # --- Definiton of global variables
 # [...]
 
+
 # --- callback functions
 def callback_tracking(data):
     """
@@ -346,7 +347,7 @@ def listener(args):
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 9  # time at which the bag should start playing
+        start_time = 12  # time at which the bag should start playing
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder

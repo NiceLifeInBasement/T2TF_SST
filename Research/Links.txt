@@ -86,6 +86,8 @@ http://solmaz.eng.uci.edu/Papers/Files/J10-MZ-SSK-2017.pdf
 
 
 https://pdfs.semanticscholar.org/2dc5/d3968ce6dedebbc2e6855570d178a396917c.pdf
+    == https://ieeexplore.ieee.org/document/4086094 (?)
+    slightly different title, but text is the same
     "Covariance Reconstruction for Track Fusion with Legacy Track Sources"
     "legacy trackers may only provide the local track estimates to the fusion center without any covariance information"
     keyword: covariance reconstruction
@@ -250,3 +252,8 @@ https://ieeexplore.ieee.org/abstract/document/8482908
     "Track-to-track association using fuzzy membership function and clustering for distributed information fusion"
     2018 - multi sensor multi target
     meh, doesn't seem too enticing
+
+
+TODO lies das hier mal:
+https://ieeexplore.ieee.org/document/7489501
+    "Track fusion of legacy radars using weighted averages"
