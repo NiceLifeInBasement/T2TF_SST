@@ -38,7 +38,7 @@ import tf_conversions as tf_c
 import pickle
 from visualization_msgs.msg import MarkerArray
 import general.visual_publishing as vis_pub
-from manual_RA_match import non_singletons
+from manual_RA_match import non_singletons, avg_fusion
 
 # --- Definiton of global variables
 # [...]
@@ -201,8 +201,8 @@ def callback_tracking(data):
             # TODO this shouldn't be necessary, for some reason the markers are in "odom" not "ibeo_front_center"
         # assoc not used so far
         marker_color = (1, 0, 0, 1)  # red, non-opaque boxes for the visualization of assoc/fusion
-        # assoc_boxes = avg_fusion(assoc)  # use this to average between assoc results and display that
-        assoc_boxes = non_singletons(assoc)  # use this two display 2 boxes (only association overlay)
+        assoc_boxes = avg_fusion(assoc)  # use this to average between assoc results and display that
+        # assoc_boxes = non_singletons(assoc)  # use this two display 2 boxes (only association overlay)
         assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
 
         all_markers = vis_pub.merge_marker_array([lidar_markers, c2x_markers, assoc_markers])  # merge markers
@@ -347,7 +347,7 @@ def listener(args):
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 12  # time at which the bag should start playing
+        start_time = 97  # time at which the bag should start playing
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder
@@ -381,7 +381,7 @@ def setup(args=None):
     # hist_size = rospy.Duration(0) => history will be only 1 track (i.e. no history)
     # hist size Duration(4) causes significant lag already!
     hist_size = rospy.Duration(0, 500000000)  # .5 secs
-    hist_size = rospy.Duration(0)
+    hist_size = rospy.Duration(2)
 
     state_space = (True, False, False, False)  # usual state space: (TFFT), only pos: (TFFF)
     # The threshold NEEDS TO BE ADJUSTED if you use something other than TFFF!

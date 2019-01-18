@@ -1,0 +1,26 @@
+# Notes re: achte tc (18.01)
+1.
+    arbeit von Andreas leich/prof. baum einmal vorher lesen lassen, ca 1 woche vorlauf zeit
+    davor mit fabian absprechen
+
+2.
+    evaluation ist so ok (2 normale, ein history bild + RMSE eval)
+    keiner sieht eine andere möglichkeit für vernünftige evaluation
+
+3.
+    profiling einmal erwähnen
+    TODO vielleicht runtime von manual_RA_match mal ausreizen um zu gucken wv es wirklich von live weg ist
+
+4.
+    code kommt am ende in ein git repository
+
+---post:
+1.
+    grafiken richtig eingebettet etc
+    formal richtig ist top1 priorität
+
+2.
+    DLR in einleitung und bei den daten je einmal erwähnen
+
+3.
+    eigenanteil vernünftig vermitteln
