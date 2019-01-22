@@ -2,8 +2,7 @@
 """
 Subscribes to topics that contain information about the simulated data and visualizes incoming data.
 """
-import rospy
-from tracking_consistency.tracking_visuals import *
+from tracking_visuals import *
 from bob_perception_msgs.msg import TrackedOrientedBoxArray
 import threading as thr
 

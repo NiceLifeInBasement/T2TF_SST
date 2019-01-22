@@ -18,10 +18,8 @@ USAGE:
 4. in between these publishing steps you should use coordinator.move_all etc to change the actual data
 5. a different client can subscribe to these topics to receive all data about the measured data
 """
-import rospy
-import numpy as np
 from simulation.sim_coordinator import *
-from tracking_consistency.tracking_visuals import *
+from tracking_visuals import *
 import time
 import bob_perception_msgs.msg as bobmsg
 

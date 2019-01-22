@@ -7,9 +7,6 @@ The player will be terminated if the plot window is closed. Still, this causes s
 to play the bag from a different terminal
 """
 
-import numpy as np
-import rospy
-from bob_perception_msgs.msg import *
 from tracking_visuals import *
 import matplotlib.pyplot as plt
 from consistency_methods import *

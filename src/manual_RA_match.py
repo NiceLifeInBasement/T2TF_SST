@@ -12,26 +12,17 @@ there into the fixed frame ibeo_front_center of the fascare object.
 Afterwards, the data is associated, and results are printed.
 """
 
-import numpy as np
-import rospy
-from bob_perception_msgs.msg import *
-from tracking_consistency.tracking_visuals import *
+from general.tracking_visuals import *
 import matplotlib.pyplot as plt
-from tracking_consistency.similarity import *
 import subprocess
-import sys
 from tf2_msgs.msg import TFMessage
-import threading as thr
 import tf
-from geometry_msgs.msg import TransformStamped as tfStamped
-from geometry_msgs.msg import Transform, PointStamped, Point
+from geometry_msgs.msg import PointStamped, Point
 from simulation.sim_classes import SimulatedVehicle
 import general.t2ta_algorithms as t2ta
-from tracking_consistency.similarity import *
 import os
 from general.t2t_history import *
 import copy
-import tf_conversions as tf_c
 import pickle
 from visualization_msgs.msg import MarkerArray
 import general.visual_publishing as vis_pub
@@ -429,7 +420,7 @@ def listener(start, speed):
 
     # Start the fascare player
     fname = "roundabout_fascare_later.bag"
-    fascare_proc = subprocess.Popen(['rosbag', 'play', rate, starttime, fname], cwd="data/", stdout=FNULL)
+    fascare_proc = subprocess.Popen(['rosbag', 'play', rate, starttime, fname], cwd="data/")#, stdout=FNULL)
     fname = "roundabout_viewcar2_affix_early.bag"
     viewcar2_proc = subprocess.Popen(['rosbag', 'play', rate, starttime_early, fname], cwd="data/", stdout=FNULL)
 
@@ -450,10 +441,10 @@ def setup():
     """
     # VARIABLE DEFINITIONS
     global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity, do_ego_plot, do_assoc, velo_threshold, do_velo_cut
-    start_time = 10
-    play_rate = 0.1
+    start_time = 430  # max is ~449.386
+    play_rate = 1
     t2ta_thresh = 13
-    hist_size = rospy.Duration(0)
+    hist_size = rospy.Duration(5)
     state_space = (True, False, False, False)
     use_identity = True
     do_ego_plot = True

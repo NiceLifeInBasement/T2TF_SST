@@ -22,16 +22,10 @@ Some notes on the current stage of testing (13-Nov-18 / 15:45)
     using velo_add=0.5 for the similarity checker works fine-ish
 """
 
-import rospy
-import numpy as np
 from bob_perception_msgs.msg import *
-from std_msgs.msg import Float64MultiArray
 import threading as thr
-import copy
-from general.t2tf_algorithms import *
-import math
 import general.t2ta_algorithms as t2ta
-from tracking_consistency.similarity import *
+from similarity import *
 
 
 def callback_association(data):

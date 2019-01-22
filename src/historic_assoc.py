@@ -15,22 +15,15 @@ rosrun T2TF_SST historic_assoc.py mavenNew_small.bag
 (assuming you are starting from a directory that has the subdirectory data/ which contains mavenNew_small.bag)
 """
 
-import numpy as np
-import rospy
-from bob_perception_msgs.msg import *
-from tracking_consistency.tracking_visuals import *
+from general.tracking_visuals import *
 import matplotlib.pyplot as plt
-from tracking_consistency.similarity import *
 import subprocess
-import sys
 from tf2_msgs.msg import TFMessage
 import threading as thr
 import tf
-from geometry_msgs.msg import TransformStamped as tfStamped
-from geometry_msgs.msg import Transform, PointStamped, Point
+from geometry_msgs.msg import PointStamped, Point
 from simulation.sim_classes import SimulatedVehicle
 import general.t2ta_algorithms as t2ta
-from tracking_consistency.similarity import *
 import os
 from general.t2t_history import *
 import copy
@@ -38,7 +31,7 @@ import tf_conversions as tf_c
 import pickle
 from visualization_msgs.msg import MarkerArray
 import general.visual_publishing as vis_pub
-from manual_RA_match import non_singletons, avg_fusion
+from manual_RA_match import avg_fusion
 
 # --- Definiton of global variables
 # [...]
@@ -59,11 +52,12 @@ def callback_tracking(data):
         # Remove the selected c2x entry from the list of all c2x entries so that it doesn't get used twice
         c2x.remove(c2x_selection)
 
-    global plot_bounding_boxes
-    if plot_bounding_boxes:
-            visuals.plot_box_array_rectangles(data.boxes, color='b', append=False)
-    else:
-        visuals.scatter_box_array(data.boxes, append=False)
+    global plot_bounding_boxes, do_visual_plot
+    if do_visual_plot:
+        if plot_bounding_boxes:
+                visuals.plot_box_array_rectangles(data.boxes, color='b', append=False)
+        else:
+            visuals.scatter_box_array(data.boxes, append=False)
 
     # Append the current information to the history object
     history.add("lidar_0", data.boxes)
@@ -94,10 +88,14 @@ def callback_tracking(data):
             try:
                 next_point = (x_pos, y_pos, track.object_id, "y")
                 if plot_bounding_boxes:
-                    visuals.plot_box_array_rectangles([track], color="y", append=True)
+                    global do_visual_plot
+                    if do_visual_plot:
+                        visuals.plot_box_array_rectangles([track], color="y", append=True)
                 else:
-                    # visuals.plot_points_tuple([next_point], append=True)
-                    visuals.scatter_box_array([track], color="y", append=True)
+                    global do_visual_plot
+                    if do_visual_plot:
+                        # visuals.plot_points_tuple([next_point], append=True)
+                        visuals.scatter_box_array([track], color="y", append=True)
             except tf.ExtrapolationException as e:
                 # Extrapolation error, print but keep going (possible just because only one frame was received so far)
                 print(e)
@@ -125,6 +123,9 @@ def callback_tracking(data):
             assoc = t2ta.t2ta_historic(obj_ids, sensor_names, t2ta_thresh, hist_size, history, time=timing,
                                        state_space=state_space, use_identity=use_identity)
             ids = []  # this list will hold lists where each entry is an object id in a cluster
+            if not do_visual_plot:
+                # Simple print if no visual plot was done to indicate if the program is still running
+                print("[Number of clusters: "+str(len(assoc))+" ]")
             for a in assoc:  # get a list of all associations
                 temp = []  # stores ids for one association
                 for box in a:  # all tracking boxes in the current association
@@ -134,6 +135,7 @@ def callback_tracking(data):
                     # If a non-singleton cluster was found, print all ids that belong to it
                     print("<<  Non-singleton Cluster: " + str(temp) + "  >>")
                     pass
+
 
                 # DEBUG
                 # The following block checks for association clusters of size 2
@@ -197,12 +199,12 @@ def callback_tracking(data):
         marker_color = (1, 1, 0, 0.5)  # yellow boxes for the c2x boxes
         c2x_markers = vis_pub.boxes_to_marker_array(c2x_selection.tracks, marker_color)
         for marker in c2x_markers.markers:  # need to fix the frame id to prevent unnecessary transform
-            marker.header.frame_id = "ibeo_front_center"
-            # TODO this shouldn't be necessary, for some reason the markers are in "odom" not "ibeo_front_center"
-        # assoc not used so far
+            marker.header.frame_id = "ibeo_front_center"  # ensure that rviz does not try to transform markers further
         marker_color = (1, 0, 0, 1)  # red, non-opaque boxes for the visualization of assoc/fusion
+
         assoc_boxes = avg_fusion(assoc)  # use this to average between assoc results and display that
         # assoc_boxes = non_singletons(assoc)  # use this two display 2 boxes (only association overlay)
+
         assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
 
         all_markers = vis_pub.merge_marker_array([lidar_markers, c2x_markers, assoc_markers])  # merge markers
@@ -263,6 +265,7 @@ def callback_c2x_tf(data):
             track.box.center_y = tf_point.point.y + c2x_offset_y
             track.box.velocity_x = tf_vel[0]
             track.box.velocity_y = tf_vel[1]
+            track : TrackedOrientedBox
             # DEBUG
             # print(str(track.box.center_x)+"\t"+str(track.box.center_y))
             # print("steps: "+str(steps)+"\tvelx: "+str(point_vel.point.x)+" vely: "+str(point_vel.point.y))
@@ -339,7 +342,7 @@ def listener(args):
         # now start a rosbag play for that filename
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
 
-        play_rate = 0.1  # set the number to whatever you want your play-rate to be
+        play_rate = 1  # set the number to whatever you want your play-rate to be
         # play_rate = 1
         rate = '-r' + str(play_rate)
         # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
@@ -347,7 +350,7 @@ def listener(args):
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 97  # time at which the bag should start playing
+        start_time = 0  # time at which the bag should start playing
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder
@@ -358,7 +361,11 @@ def listener(args):
 
         player_proc = subprocess.Popen(['rosbag', 'play', rate, time, fname], cwd="data/")#, stdout=FNULL)
 
-    plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
+    global do_visual_plot
+    if do_visual_plot:
+        plt.show()  # DON'T NEED TO SPIN IF YOU HAVE A BLOCKING plt.show
+    else:
+        rospy.spin()
 
     # Kill the process (if it was started)
     if len(args) > 1:
@@ -381,7 +388,7 @@ def setup(args=None):
     # hist_size = rospy.Duration(0) => history will be only 1 track (i.e. no history)
     # hist size Duration(4) causes significant lag already!
     hist_size = rospy.Duration(0, 500000000)  # .5 secs
-    hist_size = rospy.Duration(2)
+    hist_size = rospy.Duration(0)
 
     state_space = (True, False, False, False)  # usual state space: (TFFT), only pos: (TFFF)
     # The threshold NEEDS TO BE ADJUSTED if you use something other than TFFF!
@@ -390,7 +397,11 @@ def setup(args=None):
 
     transforms = []
     # Create a new Visualization object with the axis limits and "blue" as default plotting color
-    visuals = TrackVisuals(limit=65, neg_limit=-40, limit_y=50, neg_limit_y=-40, color='b')
+    global do_visual_plot
+    do_visual_plot = False  # do you want to plot data in matplotlib?
+
+    if do_visual_plot:
+        visuals = TrackVisuals(limit=65, neg_limit=-40, limit_y=50, neg_limit_y=-40, color='b')
 
     # define a similarity function for t2ta
     # Init the similarity checker that provides the similarity function
@@ -427,4 +438,5 @@ def setup(args=None):
 if __name__ == '__main__':
     # Simply call the setup function, don't pass args so that sys.argv is used instead
     setup()
+
 

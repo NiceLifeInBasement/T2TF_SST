@@ -19,22 +19,16 @@ If you want to plot everything from the callback_tracking, use callback_tf_appen
 and callback_tf_static
 """
 
-import numpy as np
-import rospy
-from bob_perception_msgs.msg import *
-from tracking_consistency.tracking_visuals import *
+from tracking_visuals import *
 import matplotlib.pyplot as plt
-from tracking_consistency.similarity import *
 import subprocess
-import sys
 from tf2_msgs.msg import TFMessage
 import threading as thr
 import tf
-from geometry_msgs.msg import TransformStamped as tfStamped
-from geometry_msgs.msg import Transform, PointStamped, Point
+from geometry_msgs.msg import PointStamped, Point
 from simulation.sim_classes import SimulatedVehicle
 import general.t2ta_algorithms as t2ta
-from tracking_consistency.similarity import *
+from similarity import *
 import os
 from general.t2t_history import *
 

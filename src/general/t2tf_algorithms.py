@@ -60,7 +60,7 @@ def dual_cov_intersection(P_i, P_j, x_i, x_j, omega_fct=dual_fast_omega):
     One parameter is a function to determine w/omega:
         In the basic CI algorithm, this is a convex optimization problem
         In the FCI/I-FCI algorithms, an approximate solution is calculated
-    This function should take two arguments: P_i and P_j (in that order). These parameters are the two covariance
+    This omega_function should take two arguments: P_i and P_j (in that order). These parameters are the two covariance
     matrices of the tracks.
 
     This implementation follows the following naming:

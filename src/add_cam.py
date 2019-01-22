@@ -13,22 +13,15 @@ List of all bag files that can be used: (enter the number before it as the comma
     Scenario: Car passing the (real) c2x vehicle in front of the ego car
 """
 
-import numpy as np
-import rospy
-from bob_perception_msgs.msg import *
-from tracking_consistency.tracking_visuals import *
+from tracking_visuals import *
 import matplotlib.pyplot as plt
-from tracking_consistency.similarity import *
 import subprocess
-import sys
 from tf2_msgs.msg import TFMessage
 import threading as thr
 import tf
-from geometry_msgs.msg import TransformStamped as tfStamped
-from geometry_msgs.msg import Transform, PointStamped, Point
+from geometry_msgs.msg import PointStamped, Point
 from simulation.sim_classes import SimulatedVehicle
 import general.t2ta_algorithms as t2ta
-from tracking_consistency.similarity import *
 import os
 from general.t2t_history import *
 import copy

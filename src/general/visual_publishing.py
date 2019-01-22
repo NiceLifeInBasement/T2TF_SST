@@ -21,15 +21,6 @@ def boxes_to_marker_array(boxes, color=(1,1,0,0)):
 
     point_array = []
 
-    # http://wiki.ros.org/rviz/DisplayTypes/Marker#The_Marker_Message
-    # TODO implement this function
-    # TODO this should return a marker array
-    #   then in a higher level function, the marker arrays of multiple messages should be combined (see stub below)
-    #   and that should be published to a topic which rviz subs to
-    #   --> result should be a plot of the markers in rviz
-    #   type == point probably
-    #   create Markers one by one, and append them to the marker array
-
     for tracked_box in boxes:
         next_marker = Marker()
         # Copy timestamp and frame id of the point
@@ -50,7 +41,6 @@ def boxes_to_marker_array(boxes, color=(1,1,0,0)):
         next_marker.pose.orientation.z = 0
         next_marker.pose.orientation.w = 1  # ?
 
-        # Scale of the marker TODO maybe play around with this
         next_marker.scale.x = 1
         next_marker.scale.y = 1
         next_marker.scale.z = 0.1

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 """
+TODO: requires cleanup, since it currently is mostly copy-pasted but will be part of the final package
 Performs a test run of a simulation
 Output: RSME (measurement-groundtruth and fusion-groundtruth)
 
@@ -21,7 +22,6 @@ import math
 import copy
 from general.t2tf_algorithms import *
 import threading as thr
-
 
 
 def create_publishers(no_measures=2, qsize=10):
@@ -120,6 +120,7 @@ def callback_ci(data):
             c += 1  # increment counter
         pub.publish(fused_data)
 
+        # TODO big debug block
         """
         # print fusion results:
         for box in fused_data.tracks:

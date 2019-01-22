@@ -2,14 +2,12 @@
 """
 Testing class for the simulation
 """
-import rospy
 
 # Appears to be not necessary, would be for being able to import my own modules
 # import roslib; roslib.load_manifest('T2TF_SST')
 
-import numpy as np
 from simulation.sim_coordinator import *
-from tracking_consistency.tracking_visuals import *
+from tracking_visuals import *
 import time
 
 
