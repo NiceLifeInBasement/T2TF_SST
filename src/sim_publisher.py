@@ -72,5 +72,4 @@ if __name__ == '__main__':
     for s in range(no_steps):
         publish_all(pub_truth, pub_measure, coordinator)
         coordinator.move_all(steps=1)
-        # TODO this function is kinda hard to stop via ctrl-c, probably due to the time.sleep function
-        time.sleep(sleep_time)
+        time.sleep(sleep_time)  # makes the function somewhat hard to stop, but is necessary for slowed exec.

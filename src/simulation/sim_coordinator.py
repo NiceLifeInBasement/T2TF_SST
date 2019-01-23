@@ -2,6 +2,7 @@
 """
 Contains the class definition for the coordinator of the simulation, split from the other classes due its importance and
 possible size
+TODO longer description of the file
 """
 import rospy
 import numpy as np

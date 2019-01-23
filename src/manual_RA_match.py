@@ -94,7 +94,7 @@ def callback_fascare(data):
             track.box.center_x = tf_point.point.x
             track.box.center_y = tf_point.point.y
 
-            # TODO currently only transforming x/y position, but nothing else (ignoring velocity etc)
+            # if transforms of more than x/y pos. are necessary, insert them here
 
             track.box.header.frame_id = dest_id  # Changed the frame that the point is in
 
@@ -328,7 +328,7 @@ def callback_viewcar2(data):
             track.box.center_x = tf_point.point.x
             track.box.center_y = tf_point.point.y
 
-            # TODO currently only transforming x/y position, but nothing else (ignoring velocity etc)
+            # if transforms of more than x/y pos. are necessary, insert them here
 
             track.box.header.frame_id = dest_id  # Changed the frame that the point is in
         # For all exceptions: print them, but keep going instead of stopping everything

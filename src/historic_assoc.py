@@ -231,8 +231,10 @@ def callback_tf_static(data):
 
 def callback_c2x_tf(data):
     """
-    Stores the last c2x message, but transforms it beforehand
-    TODO consider adding in rotation for length and width (for the bounding box plot)
+    Stores the last c2x message, but transforms it beforehand.
+    Transformation is only for position and velocity data, since this is the only data that is actively used by the
+    program. The only exception is the plotting of bounding boxes. These will therefore not be rotated correctly, but
+    their size will be correct anyway.
     """
     global history, steps, constant_velo, c2x_offset_x, c2x_offset_y
     tracks = data.tracks
@@ -265,7 +267,6 @@ def callback_c2x_tf(data):
             track.box.center_y = tf_point.point.y + c2x_offset_y
             track.box.velocity_x = tf_vel[0]
             track.box.velocity_y = tf_vel[1]
-            track : TrackedOrientedBox
             # DEBUG
             # print(str(track.box.center_x)+"\t"+str(track.box.center_y))
             # print("steps: "+str(steps)+"\tvelx: "+str(point_vel.point.x)+" vely: "+str(point_vel.point.y))
@@ -290,15 +291,18 @@ def callback_c2x_tf(data):
     # outdated coordinates and instead can work with "updated" coordinates for time steps that are not included in the
     # real c2x messages.
     add_points = 4  # how many "fake" points should be added between this and the next measuremen
-    # TODO consider changing the timing/number of fakes depending on the time diff between this data and the last data
+    # Currently the number and timing of "fake" points are fixed. They are selected to fit the data sets 1&2, but
+    # in general it can be better to use previous data to estimate the time difference and number of points
     if len(data.tracks) > 0:  # only do the following if the track contained something
         for i in range(add_points):
             # add 4 more measurements, each based on the data, but with manipulated time and position based on velocity
             fake_data = copy.deepcopy(data)  # Create a copy of the data
             # now change the timestamp of this new data
-            # c2x data arrives every 0.2 seconds, so to fit an additional 4 measurements in there
+
+            # c2x data arrives every 0.2 seconds, so to fit an additional 4 measurements
             time_shift = rospy.Duration(0, 40000000)  # increase by 1/20 of a sec
-            # TODO dynamically adjust time_shift based on the number add_points
+            # this would need to change if it should automatically fit to data of other data sets.
+
             fake_data.header.stamp = fake_data.header.stamp + time_shift
             for track in fake_data.tracks:
                 track.box.header.stamp = track.box.header.stamp + time_shift
@@ -398,7 +402,7 @@ def setup(args=None):
     transforms = []
     # Create a new Visualization object with the axis limits and "blue" as default plotting color
     global do_visual_plot
-    do_visual_plot = False  # do you want to plot data in matplotlib?
+    do_visual_plot = False  # do you want to plot data in matplotlib? (boolean)
 
     if do_visual_plot:
         visuals = TrackVisuals(limit=65, neg_limit=-40, limit_y=50, neg_limit_y=-40, color='b')
@@ -414,9 +418,8 @@ def setup(args=None):
     # i.e. between messages (since the frequency of the messages is lacking)
     # factor that needs to be used for velo when looking at change between 2 consecutive steps
     constant_velo = 0.05  # 0.05 performs best in my tests using maven-1.bag (if using c2x_offset_x=4)
-    # The new transformation of velocity using the extracted matrix works, so you can now use a "normal" factor.
+
     # Constant offsets for all c2x data
-    # TODO possibly "overfitting", but works incredibly well on both bag files
     # I assume the reason that this works/is necessary could be because the trackers have different "centers of tracking
     # boxes, and therefore this offset is necessary to "skip" the distance between the points
     c2x_offset_x = 4
@@ -424,9 +427,11 @@ def setup(args=None):
 
     c2x_offset_test = 0.0  # value that will be added+subtracted in every step to improve the above offset_x
     # set to 0.0 if you don't want dynamic offset changing
+    # (should be 0.0 if you are not testing different offsets in a single run)
 
     global plot_bounding_boxes
     plot_bounding_boxes = False  # Set to True if you want to plot bounding boxes, False for a scatterplot of objects
+    # (Bounding box data is not transformed, so the sizes will be correct but the rotation might be off)
 
     # Check which arguments should be used (parameter if possible, else sys.argv)
     if args is None:

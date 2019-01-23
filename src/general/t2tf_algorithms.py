@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-First quick implementation of track to track fusion algorithms
+First implementation of track to track fusion algorithms
+TODO longer description of the file
 """
 from numpy.linalg import inv as inverse
 from numpy.linalg import det as det

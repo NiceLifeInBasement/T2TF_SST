@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-TODO: requires cleanup, since it currently is mostly copy-pasted but will be part of the final package
+TODO: requires a bit of cleanup, since it currently is mostly copy-pasted but will be part of the final package
+TODO: requires commenting on all functions that explains what they are used for (roughly)
 Performs a test run of a simulation
 Output: RSME (measurement-groundtruth and fusion-groundtruth)
 
@@ -17,6 +18,7 @@ import numpy
 import sys
 from bob_perception_msgs.msg import *
 from simulation.sim_coordinator import *
+from simulation.sim_classes import *  # DEBUG
 import time
 import math
 import copy
@@ -56,7 +58,6 @@ def publish_all(pub_truth, pub_measure, coordinator):
 
 
 def setup():
-    global ground_truth_array
     ground_truth_array = []
     rospy.init_node("sim_testing", anonymous=True)
     # Setup all global variables
@@ -87,8 +88,7 @@ def setup():
     for s in range(no_steps):
         publish_all(pub_truth, pub_measure, coordinator)
         coordinator.move_all(steps=1)
-        # TODO this function is kinda hard to stop via ctrl-c, probably due to the time.sleep function
-        time.sleep(sleep_time)
+        time.sleep(sleep_time)  # makes the function somewhat hard to stop, but is necessary for slowed exec.
 
 
 def callback_ci(data):
@@ -100,11 +100,11 @@ def callback_ci(data):
     global storage, found_seqs, pub, lock, ground_truth_array
     lock.acquire()
 
-    seq = data.header.seq
-    seq -= 1
+    seq = data.header.seq  # get seq. number
+    seq -= 1  # account for indexing
     if seq in found_seqs:
         # found this sequence in the data, assuming that its position matches its sequence number
-        fused_data = copy.deepcopy(data)
+        fused_data = copy.deepcopy(data)  # fused_data will store the results, so copy to prevent overwriting
         other_data = storage[seq].tracks
         new_data = data.tracks
         c = 0  # counter for which box is currently being edited
@@ -119,23 +119,6 @@ def callback_ci(data):
                     break  # don't need to look further since we found a matching box already
             c += 1  # increment counter
         pub.publish(fused_data)
-
-        # TODO big debug block
-        """
-        # print fusion results:
-        for box in fused_data.tracks:
-            print("FUSION BOX:")
-            print("\tID = "+str(box.object_id))
-            print("\tCX = "+str(box.box.center_x))
-            print("\tCY = " + str(box.box.center_y))
-        print("---")
-        for box in ground_truth_array[-1].tracks:
-            print("Real BOX:")
-            print("\tID = "+str(box.object_id))
-            print("\tCX = "+str(box.box.center_x))
-            print("\tCY = " + str(box.box.center_y))
-        print("#############################")
-        """
 
         # analyse fusion results
         x_diff = []

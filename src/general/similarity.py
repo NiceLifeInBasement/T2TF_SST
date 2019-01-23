@@ -2,6 +2,7 @@
 """
 File that implements functions/classes that are used for comparing two tracked objects wrt similarity.
 A simple example for this is the pure distance
+TODO longer description of the file -- explain that this is more PoC and not really used
 """
 from t2t_utils import *
 

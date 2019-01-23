@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
 Contains class definitions for data simulation for the algorithms
+TODO longer description of the file
 """
 import rospy
 import numpy as np
@@ -24,9 +25,6 @@ class SimulatedVehicle:
     real_width = 0
     real_velocity_x = 0
     real_velocity_y = 0
-
-    # The following are general class variables
-    # [...]
 
     def __init__(self, oid, x=0.0, y=0.0, angle=0.0, length=0.0, width=0.0, vel_x=0.0, vel_y=0.0):
         """
@@ -213,159 +211,6 @@ class SimulatedVehicle:
         return mat
 
     @staticmethod
-    def spread(mat, max_fac=1.35, min_fac=1.0):
-        """
-        Uses a random-based algorithm to spread entries from the diagonal to the upper-triangular matrix, and then
-        mirror this so that the resulting matrix is symmetric.
-        The Algorithm is as follows:
-        Perform (matrix size)*5 steps after the upper-triangular has no 0 entries left:
-            Select a random cell
-            Determine a weight for its left neighbor and its downwards neighbor (min_fac..max_fac)
-            Set the cell to the sum of the weighted entries of these two positions
-
-        This function can be used to simulate random covariance matrices based on a vector of variances.
-        Use SimulatedVehicle.vec_to_mat first, and pass the result to this function to acquire such a matrix.
-        :param mat: matrix that should serve as a base, should be a quadratic matrix where all values except for the
-                    diagonal are 0
-        :param max_fac: Maximum weighting for the neighboring cells in the algorithm
-        :param min_fac: Minimum weighting for the neighboring cells in the algorithm
-        :return: A symmetric matrix that has values based on the diagonal values
-        """
-        size = len(mat)
-        # Algorithm is based on random selection of matrix elements
-        # It will select elements until the following criteria are met:
-        #   No 0 values are included in the mirrored version of the matrix(i.e. in the top half of this matrix)
-        #   At least min_steps(==size*5) steps were performed AFTER the above condition was met
-        min_steps = size * 5
-        n = 0  # Counts how many steps were done, is only increased as long as no 0 values are present
-        while n < min_steps:
-            # Select a random position in the upper half of the matrix
-            # Select two small random factors that determine how it changes
-            # Set the position to fac_i*field_left + fac_j*field_down
-            i = np.random.randint(0, size)
-            try:
-                j = np.random.randint(i + 1, size)
-            except ValueError:
-                # selected an impossible position, simply try again
-                continue
-
-            if i == j:
-                continue  # don't want to change diagonal, so try again
-
-            # Select the random weightings for the two positions
-            fac_i = np.random.uniform(low=min_fac, high=max_fac)
-            fac_j = np.random.uniform(low=min_fac, high=max_fac)
-
-            # Add these values to the position if possoble
-            mat[i][j] = 0
-            try:
-                mat[i][j] += fac_i * mat[i - 1][j]
-            except IndexError:
-                pass  # Couldn't add the left entry since this is leftmost already
-            try:
-                mat[i][j] += fac_j * mat[i][j + 1]
-            except IndexError:
-                pass  # Couldn't add the down entry since this is at the bottom
-            if 0 not in SimulatedVehicle.mirror(mat):
-                n += 1
-        # End of while
-        return SimulatedVehicle.mirror(mat)
-
-    @staticmethod
-    def get_random_cov(var_pos=None, var_angle=None, var_lw=None, var_vel=None, max_fac=0.35, min_fac=0.0):
-        """
-        Creates a random covariance matrix based on variance values.
-        Uses the SimulatedVehicle.spread function to create such a matrix.
-        If any parameter is passed as none, its relevant entries in the final matrix will be NaN
-        :param var_pos: Variance for the position (x and y) or None if NaN in the final matrix
-        :param var_vel: Variance for the velocity (a and y) or None if NaN in the final matrix
-        :param var_angle: Variance for the angle or None if NaN in the final matrix
-        :param var_lw: Variance for the length and width or None if NaN in the final matrix
-        :param max_fac: max_fac for the spread() algorithm
-        :param min_fac: min_fac for the spread() algorithm
-        :return: A covariance matrix in format std_msgs/Float64MultiArray
-        """
-        var_vec = []
-        if var_pos is not None:
-            # Append position variance twice (x+y)
-            var_vec.append(var_pos)
-            var_vec.append(var_pos)
-        if var_angle is not None:
-            # Append angle variance once
-            var_vec.append(var_angle)
-        if var_lw is not None:
-            # Append length/width variance twice (x+y)
-            var_vec.append(var_pos)
-            var_vec.append(var_pos)
-        if var_vel is not None:
-            # Append velocity variance twice (x+y)
-            var_vec.append(var_vel)
-            var_vec.append(var_vel)
-
-        # Create a matrix out of this list and use the spread() function on the result to acquire a cov matrix
-        var_mat = SimulatedVehicle.vec_to_mat(var_vec)
-
-        is_singular = True  # Flag for testing whether the matrix is singular or not
-        while is_singular:
-            # Calculate a possible matrix
-            var_mat = SimulatedVehicle.spread(mat=var_mat, max_fac=max_fac, min_fac=min_fac)
-            try:  # Attempt to invert the matrix
-                inverse_test = np.linalg.inv(var_mat)
-                is_singular = False  # inversion successful, proceed
-            except np.linalg.LinAlgError:  # Error during inversion, dont proceed yet
-                is_singular = True
-
-        # This matrix is not in the correct format yet, its just a numpy 2D array without the necessary NaNs
-        nan = float("NaN")
-
-        # - - - - -
-        # Please note that this is _not_ actual covariance data based on anything
-        # The only basis for the data is the variance of the measurements
-        # This is just for simulation/testing purposes, not to acquire realistic data
-        # - - - - -
-
-        # create cov_list, which is a list of covariance entries from the array
-        cov_list = [nan for x in range(49)]
-        # Start with 49 nan entries, now just need to fill in the values at the correct position
-
-        # TODO currently just dealing with the default case (pos+vel cov.) and throwing an error else
-        if (var_pos is not None) and (var_angle is None) and (var_lw is None) and (var_vel is not None):
-            # Default case
-            pass  # Here, insert values at their default (correct) positions
-            # cov_mat has size 4*4 since we have pos+vel cov
-            # cov_list has 49 (7*7) entries, but only the outer 2*2 squares in the corners need to be filled
-            # since pos_cov has ids 0 and 1 and vel_cov has ids 5 and 6
-            cov_list[0] = var_mat[0][0]
-            cov_list[1] = var_mat[0][1]
-            cov_list[5] = var_mat[0][2]
-            cov_list[6] = var_mat[0][3]
-
-            cov_list[7] = var_mat[1][0]
-            cov_list[8] = var_mat[1][1]
-            cov_list[12] = var_mat[1][2]
-            cov_list[13] = var_mat[1][3]
-
-            cov_list[35] = var_mat[2][0]
-            cov_list[36] = var_mat[2][1]
-            cov_list[40] = var_mat[2][2]
-            cov_list[41] = var_mat[2][3]
-
-            cov_list[42] = var_mat[3][0]
-            cov_list[43] = var_mat[3][1]
-            cov_list[47] = var_mat[3][2]
-            cov_list[48] = var_mat[3][3]
-        else:
-            print("Unexpected Covariance entries, assuming that only position and velocity have covariance entries")
-            raise RuntimeError("Received unexpected covariance entries (expecting only pos.+vel. cov.")
-
-        # Create Float64MultiArray similar to those in the bag files
-        dim_0 = MultiArrayDimension(label="", size=7, stride=49)
-        dim_1 = MultiArrayDimension(label="", size=7, stride=7)
-        cov_dim = [dim_0, dim_1]
-        cov_layout = MultiArrayLayout(dim=cov_dim, data_offset=0)
-        return Float64MultiArray(layout=cov_layout, data=cov_list)
-
-    @staticmethod
     def get_diagonal_cov(var_pos=None, var_angle=None, var_lw=None, var_vel=None):
         """
         Creates a random covariance matrix based on variance values.
@@ -396,7 +241,7 @@ class SimulatedVehicle:
             var_vec.append(var_vel)
             var_vec.append(var_vel)
 
-        # Create a matrix out of this list and use the spread() function on the result to acquire a cov matrix
+        # Create a matrix out of this list
         var_mat = SimulatedVehicle.vec_to_mat(var_vec)
 
         # This matrix is not in the correct format yet, its just a numpy 2D array without the necessary NaNs
@@ -406,7 +251,11 @@ class SimulatedVehicle:
         cov_list = [nan for x in range(49)]
         # Start with 49 nan entries, now just need to fill in the values at the correct position
 
-        # TODO currently just dealing with the default case (pos+vel cov.) and throwing an error else
+        # PROBLEM/TO DO:
+        #   Currently this can only deal with the case of position+velocity covariance
+        #   All other cases currently produce an error
+        #   However, this is the only case present in the real data, so all testing was limited to it aswell.
+        #   A more complex algorithm (than the simple insertion) would be needed to accommodate arbitrary combinations
         if (var_pos is not None) and (var_angle is None) and (var_lw is None) and (var_vel is not None):
             # Default case
             pass  # Here, insert values at their default (correct) positions

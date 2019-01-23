@@ -148,7 +148,6 @@ def callback_tracking(data):
                         print("<<  Singleton Cluster containing 100 found  >>")
             """
         except ValueError:
-            # TODO find out what exactly causes this
             print("ValueError during t2ta")
 
         # --- debug:
