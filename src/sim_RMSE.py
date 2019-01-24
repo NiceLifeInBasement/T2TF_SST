@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 """
-TODO: requires a bit of cleanup, since it currently is mostly copy-pasted but will be part of the final package
-TODO: requires commenting on all functions that explains what they are used for (roughly)
 Performs a test run of a simulation
-Output: RSME (measurement-groundtruth and fusion-groundtruth)
+Output: rmse (measurement-groundtruth and fusion-groundtruth)
 
 Performs 2 measurements and CI with those
 
@@ -18,7 +16,6 @@ import numpy
 import sys
 from bob_perception_msgs.msg import *
 from simulation.sim_coordinator import *
-from simulation.sim_classes import *  # DEBUG
 import time
 import math
 import copy
@@ -27,7 +24,15 @@ import threading as thr
 
 
 def create_publishers(no_measures=2, qsize=10):
-
+    """
+    Creates ROS publishers for all necessary topics and a SimulationCoordinator object
+    Topics used are:
+        t2t_sim/truth  - for the ground truth
+        t2t_sim/measured_X - 0<=X<no_measures - topics for the measurement (one each)
+    :param no_measures: How many sensors should be simulated
+    :param qsize: queue_size parameter for all ROS publishers
+    :return: (ROS publisher for the ground truth, array of ROS publishers for measurements, SimulationCoordinator)
+    """
     # Setup a publisher for the ground truth
     pub_truth = rospy.Publisher("t2t_sim/truth", TrackedOrientedBoxArray, queue_size=qsize)
     pub_measure = []
@@ -42,30 +47,46 @@ def create_publishers(no_measures=2, qsize=10):
 
 
 def publish_all(pub_truth, pub_measure, coordinator):
-    # Publish data on all publishers: the truth publisher and for every publisher in the array of measurement publishers
-    global current_cov_id, stddev, ground_truth_array
+    """
+    Publish data on all publishers: the truth publisher and for every publisher in the array of measurement publishers.
+    Additional information (std_deviation) is acquired from a global variable stddev.
+
+    On top of the stddev variable, the global dev_step is used to determine the linear change of standard deviation
+    between sensors.
+    Sensor 0 will be use stddev, sensor 1 will use stddev+1*dev_step
+                                 sensor 2 will use stddev+2*dev_step
+
+    :param pub_truth: ROS publisher for the ground truth
+    :param pub_measure: array of ROS publishers for the measurements
+    :param coordinator: SimulationCoordinator object
+    """
+    global stddev, ground_truth_array
     pub_truth.publish(coordinator.get_box_array())
     ground_truth_array.append(coordinator.get_box_array())
+    step_pos = 0
     for pub_m in pub_measure:
         global dev_step
-        sd = stddev + dev_step*current_cov_id  # Standard deviation for the position of the current measurement
-        # Simply using the current_cov_id to alternate between different variances, the scalar value is just to increase
-        # the impact of the manipulation (current_cov_id is always 0 or 1 if you have 2 measurements)
+        sd = stddev + dev_step*step_pos  # Standard deviation for the position of the current measurement
 
-        pub_m.publish(coordinator.get_gaussian_box_array(sd_pos=sd, cov_example_id=current_cov_id))
-        max_cov_id = 1
-        current_cov_id = (current_cov_id + 1) % (max_cov_id + 1)  # Rotate through all possible cov_ids
+        pub_m.publish(coordinator.get_gaussian_box_array(sd_pos=sd))
+        step_pos += 1
 
 
 def setup():
+    """
+    Basic setup that creates all necessary global variables, creates subscribers and publishers and then proceeds
+    to loop over the publish_all function to create the steps of the simulation (while moving the vehicles along the
+    road)
+    Uses the "small_highway" scenario defined by the SimulationCoordinator class.
+    """
+    global ground_truth_array
     ground_truth_array = []
     rospy.init_node("sim_testing", anonymous=True)
     # Setup all global variables
-    global stddev, current_cov_id, lock, storage, found_seqs
+    global stddev, lock, storage, found_seqs
     stddev = 2  # Default value for the standard deviation of the measured data
     if len(sys.argv) > 1:
         stddev = float(sys.argv[1])
-    current_cov_id = 0
     # Default values if nothing was passed via sys.argv
     no_measures = 2
     qsize = 10
@@ -96,6 +117,8 @@ def callback_ci(data):
     Callback that performs covariance intersection information fusion
     association is performed via object ids (which are unchanged from the ground truth and therefore provide perfect
     assoc. results)
+    
+    Measures RMSE values and prints them to the command line.
     """
     global storage, found_seqs, pub, lock, ground_truth_array
     lock.acquire()
@@ -123,11 +146,11 @@ def callback_ci(data):
         # analyse fusion results
         x_diff = []
         y_diff = []
-        global rsme_ci
+        global rmse_ci
         try:
-            rsme_ci
+            rmse_ci
         except NameError:
-            rsme_ci = []
+            rmse_ci = []
         for i in range(len(fused_data.tracks)):
             fusion_box = fused_data.tracks[i]
             real_box = ground_truth_array[-1].tracks[i]
@@ -135,18 +158,18 @@ def callback_ci(data):
             x_diff.append(next_x_diff * next_x_diff)  # square error for x
             next_y_diff = fusion_box.box.center_y - real_box.box.center_y
             y_diff.append(next_y_diff * next_y_diff)  # square error for y
-        rsme_x_ci = math.sqrt(sum(x_diff)/len(x_diff))
-        rsme_y_ci = math.sqrt(sum(y_diff) / len(y_diff))
-        rsme_ci.append(math.sqrt(rsme_x_ci**2 + rsme_y_ci**2))  # pythagoras for xy distance
+        rmse_x_ci = math.sqrt(sum(x_diff)/len(x_diff))
+        rmse_y_ci = math.sqrt(sum(y_diff) / len(y_diff))
+        rmse_ci.append(math.sqrt(rmse_x_ci ** 2 + rmse_y_ci ** 2))  # pythagoras for xy distance
 
         # data contains the necessary information:
         x_diff = []
         y_diff = []
-        global rsme_data
+        global rmse_data
         try:
-            rsme_data
+            rmse_data
         except NameError:
-            rsme_data = []
+            rmse_data = []
         for i in range(len(data.tracks)):
             fusion_box = data.tracks[i]
             real_box = ground_truth_array[-1].tracks[i]
@@ -154,18 +177,18 @@ def callback_ci(data):
             x_diff.append(next_x_diff * next_x_diff)  # square error for x
             next_y_diff = fusion_box.box.center_y - real_box.box.center_y
             y_diff.append(next_y_diff * next_y_diff)  # square error for y
-        rsme_x_data = math.sqrt(sum(x_diff) / len(x_diff))
-        rsme_y_data = math.sqrt(sum(y_diff) / len(y_diff))
-        rsme_data.append(math.sqrt(rsme_x_data ** 2 + rsme_y_data ** 2))  # pythagoras for xy distance
+        rmse_x_data = math.sqrt(sum(x_diff) / len(x_diff))
+        rmse_y_data = math.sqrt(sum(y_diff) / len(y_diff))
+        rmse_data.append(math.sqrt(rmse_x_data ** 2 + rmse_y_data ** 2))  # pythagoras for xy distance
 
         # other_data contains the necessary information:
         x_diff = []
         y_diff = []
-        global rsme_other_data
+        global rmse_other_data
         try:
-            rsme_other_data
+            rmse_other_data
         except NameError:
-            rsme_other_data = []
+            rmse_other_data = []
         for i in range(len(other_data)):
             fusion_box = other_data[i]
             real_box = ground_truth_array[-1].tracks[i]
@@ -173,9 +196,9 @@ def callback_ci(data):
             x_diff.append(next_x_diff * next_x_diff)  # square error for x
             next_y_diff = fusion_box.box.center_y - real_box.box.center_y
             y_diff.append(next_y_diff * next_y_diff)  # square error for y
-        rsme_x_other_data = math.sqrt(sum(x_diff) / len(x_diff))
-        rsme_y_other_data = math.sqrt(sum(y_diff) / len(y_diff))
-        rsme_other_data.append(math.sqrt(rsme_x_other_data ** 2 + rsme_y_other_data ** 2)) # pythagoras for xy distance)
+        rmse_x_other_data = math.sqrt(sum(x_diff) / len(x_diff))
+        rmse_y_other_data = math.sqrt(sum(y_diff) / len(y_diff))
+        rmse_other_data.append(math.sqrt(rmse_x_other_data ** 2 + rmse_y_other_data ** 2)) # pythagoras for xy distance)
 
         # ---
         global em_count
@@ -184,12 +207,12 @@ def callback_ci(data):
         except NameError:
             em_count = 0
         print("ERROR MEASUREMENT #"+str(em_count)+"[omega="+str(omega)+"]:")
-        print("\tCI: " + str(sum(rsme_ci)/len(rsme_ci)))
-        print("\tM1: " + str(sum(rsme_data)/len(rsme_data)))
-        print("\tM2: " + str(sum(rsme_other_data)/len(rsme_other_data)))
+        print("\tCI: " + str(sum(rmse_ci) / len(rmse_ci)))
+        print("\tM1: " + str(sum(rmse_data)/len(rmse_data)))
+        print("\tM2: " + str(sum(rmse_other_data)/len(rmse_other_data)))
         # m,c = min(averages of the measuements), average for ci
-        m = min(sum(rsme_data)/len(rsme_data), sum(rsme_other_data)/len(rsme_other_data))
-        c = sum(rsme_ci)/len(rsme_ci)
+        m = min(sum(rmse_data)/len(rmse_data), sum(rmse_other_data)/len(rmse_other_data))
+        c = sum(rmse_ci) / len(rmse_ci)
         # use m+c to calculate the improvement of the CI over the better measurement
         # if c=2, and m=3, then the improvement should be 33.3% == (m-c)/m*100
         print("\tI%: " + str((m-c)/m*100))
@@ -250,7 +273,6 @@ def fusion(track_i, track_j):
     x_j = [track_j.center_x, track_j.center_y, track_j.velocity_x, track_j.velocity_y]  # Tracking estimate of track j
     x_j = np.array(x_j)
     x, P, w = t2tf(P_i, P_j, x_i, x_j, omega_fct=w_calc)
-    # print("omega: "+str(w))  # Print out the used omega for DEBUG purposes
     # Update the estimate based on x
     estimate.center_x = x[0]
     estimate.center_y = x[1]
@@ -261,8 +283,16 @@ def fusion(track_i, track_j):
 
 
 def subscriber(no_measurements):
+    """
+    Currently known issue: because of the way data is stored, no_measurements should be 2.
+
+    Subscribes to the measurement topics and creates a publisher for CI results that is stored in the global variable
+    pub.
+    :param no_measurements: Number of subscribers to create
+    """
     # no_measurements should be 2 for now
     # since I use only one array to store data (so only the incoming track and one stored track are compared)
+    # some generalizing is necessary first, but then an arbitrary number of sensors can be simulated
     global pub
     for i in range(no_measurements):
         tname = "/t2t_sim/measured_"+str(i)
@@ -271,5 +301,5 @@ def subscriber(no_measurements):
 
 
 if __name__ == '__main__':
-    print("Running main of RSME simulation testing")
+    print("Running main of rmse simulation testing")
     setup()

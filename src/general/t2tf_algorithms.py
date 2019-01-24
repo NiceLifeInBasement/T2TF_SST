@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 """
-First implementation of track to track fusion algorithms
-TODO longer description of the file
+Implementation of the Covariance Intersection algorithm.
+
+Includes functions for approximating omega based on covariance matrices.
+
+All functions are currently only implemented for the 2-sensor case, but the algorithm can be generalized to more
+data sources.
 """
 from numpy.linalg import inv as inverse
 from numpy.linalg import det as det

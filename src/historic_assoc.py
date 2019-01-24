@@ -196,7 +196,7 @@ def callback_tracking(data):
         global vis_publisher
         marker_color = (0, 0, 1, 0.5)  # blue boxes for the lidar boxes
         lidar_markers = vis_pub.boxes_to_marker_array(data.boxes, marker_color)
-        marker_color = (1, 1, 0, 0.5)  # yellow boxes for the c2x boxes
+        marker_color = (0, 0.4, 0, 0.5)  # yellow boxes for the c2x boxes
         c2x_markers = vis_pub.boxes_to_marker_array(c2x_selection.tracks, marker_color)
         for marker in c2x_markers.markers:  # need to fix the frame id to prevent unnecessary transform
             marker.header.frame_id = "ibeo_front_center"  # ensure that rviz does not try to transform markers further
@@ -207,7 +207,11 @@ def callback_tracking(data):
 
         assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
 
-        all_markers = vis_pub.merge_marker_array([lidar_markers, c2x_markers, assoc_markers])  # merge markers
+        global publish_assoc_markers
+        if publish_assoc_markers:  # check if association/fusion markers should be published or only raw data
+            all_markers = vis_pub.merge_marker_array([lidar_markers, c2x_markers, assoc_markers])  # merge markers
+        else:
+            all_markers = vis_pub.merge_marker_array([lidar_markers, c2x_markers])  # merge markers
         vis_publisher.publish(vis_pub.delete_with_first(all_markers))  # publish
 
     # ---  finish
@@ -224,7 +228,8 @@ def callback_tf_static(data):
     global transformer
 
     for tf_obj in data.transforms:
-        # Force time == 0 or you will run into issues TODO time==0 force here
+        # Forcing time==0 for the transformation to prevent issues that can potentially happen due to buffering or
+        # data pre-processing/manipulation.
         tf_obj.header.stamp = rospy.Time(0)
         transformer.setTransform(tf_obj)
 
@@ -346,7 +351,7 @@ def listener(args):
         # now start a rosbag play for that filename
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
 
-        play_rate = 1  # set the number to whatever you want your play-rate to be
+        play_rate = 0.1  # set the number to whatever you want your play-rate to be
         # play_rate = 1
         rate = '-r' + str(play_rate)
         # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
@@ -354,7 +359,7 @@ def listener(args):
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 0  # time at which the bag should start playing
+        start_time = 200  # time at which the bag should start playing
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder
@@ -403,6 +408,9 @@ def setup(args=None):
     # Create a new Visualization object with the axis limits and "blue" as default plotting color
     global do_visual_plot
     do_visual_plot = False  # do you want to plot data in matplotlib? (boolean)
+
+    global publish_assoc_markers
+    publish_assoc_markers = False
 
     if do_visual_plot:
         visuals = TrackVisuals(limit=65, neg_limit=-40, limit_y=50, neg_limit_y=-40, color='b')

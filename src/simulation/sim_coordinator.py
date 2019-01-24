@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """
-Contains the class definition for the coordinator of the simulation, split from the other classes due its importance and
-possible size
-TODO longer description of the file
+Contains the class definition for the coordinator of the simulation.
+
+This class stores multiple SimulatedVehicles and provides functions to acquire measurements or ground truth data for
+all these at the same time.
 """
 import rospy
 import numpy as np

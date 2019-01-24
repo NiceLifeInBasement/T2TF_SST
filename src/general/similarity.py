@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 """
 File that implements functions/classes that are used for comparing two tracked objects wrt similarity.
-A simple example for this is the pure distance
-TODO longer description of the file -- explain that this is more PoC and not really used
+
+This is outdated and therefore only remains as a simple example for easy distance methods based on different values.
+The t2thistory function implements a
 """
 from t2t_utils import *
 
@@ -22,6 +23,12 @@ def dist(p1, p2):
 
 class SimilarityChecker:
     """
+    This class is outdated and was represented with more elaborate distance estimation functions based on the paper:
+        https://hal.archives-ouvertes.fr/hal-00740787/document
+    these new functions include an optional track-to-track history and are easier to use.
+
+    This is therefore not used in any real application, but merely to showcase a simple example distance calculation.
+
     Class that implements methods for comparing two tracked objects wrt similarity.
     The methods of this class use hyperparameters (for example how to weight change in object angle vs change in pos.).
     Therefore, they cannot be easily implemented as static functions.
@@ -77,14 +84,16 @@ class SimilarityChecker:
 
     def sim_velocity(self, old_obj, new_obj, time_diff=0):
         """
-        ISSUE: LOTS OF VALUES HAVE 0 VELOCITY; BUT NOT ALL
+        Since the velocity in the data sets was barely used, this function is only not currently used anywhere.
+
         Compares two objects in OrientedBox format based on the positions. This takes into account velocity based on
         the following hyperparameter:
         - dist_mult: Multiplicative with velocity and time_diff to describe change in position
 
-        This methods is basically already doing the thresholding: It draws a circle of size dist_mult*time_diff*velocity
-        around the old_obj and returns 0 if new_obj is inside this circle (therefore 0 is a valid threshold for this
-        functions similarity value). If new_obj is outside the circle, the distance to the circle is returned.
+        This methods is basically already implementing a threshold:
+        It draws a circle of size dist_mult*time_diff*velocity around the old_obj and returns 0 if new_obj is inside
+        this circle (therefore 0 is a valid threshold for this functions similarity value). If new_obj is outside the
+        circle, the distance to the circle is returned.
         :param old_obj: The first object in OrientedBox format
         :param new_obj: The second object in OrientedBox format
         :param time_diff: The numerical difference in time steps between the two objects, 0=same time step

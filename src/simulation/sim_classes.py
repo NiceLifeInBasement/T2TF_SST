@@ -1,7 +1,12 @@
 #!/usr/bin/env python
 """
-Contains class definitions for data simulation for the algorithms
-TODO longer description of the file
+Contains the SimulatedVehicle class definition. This class simulates a single vehicle, and provides functions to
+acquire measured data or ground truth data.
+
+The class also provides some static methods that might be useful in other situations.
+
+A full simulation should consist of more than one of these objects, that are managed by a central object.
+
 """
 import rospy
 import numpy as np

@@ -174,22 +174,25 @@ def callback_fascare(data):
     global vis_publisher
     marker_color = (0, 0, 1, 0.5)  # blue boxes for the fascar boxes
     fascar_markers = vis_pub.boxes_to_marker_array(data.boxes, marker_color)
-    marker_color = (1, 1, 0, 0.5)  # green boxes for the viewcar boxes
+    marker_color = (0, 0.4, 0, 0.5)  # green boxes for the viewcar boxes
     viewcar2_markers = vis_pub.boxes_to_marker_array(vc_data.boxes, marker_color)
     marker_color = (1, 0, 0, 1)  # red, non-opaque boxes for the visualization
     assoc_boxes = avg_fusion(assoc)  # use this to average between assoc results and display that
     # assoc_markers = non_singletons(assoc)  # use this two display 2 boxes (only association overlay)
     assoc_markers = vis_pub.boxes_to_marker_array(assoc_boxes, marker_color)
 
-    all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers, assoc_markers])
-    # all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers])  # skip assoc markers
+    global publish_assoc_markers
+    if publish_assoc_markers:
+        all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers, assoc_markers])
+    else:
+        all_markers = vis_pub.merge_marker_array([fascar_markers, viewcar2_markers])  # skip assoc markers
     vis_publisher.publish(vis_pub.delete_with_first(all_markers))
 
 
 def t2tassoc(data_a, data_b):
     """
-    Associates the two datasets a and b (in the form of Arrays of trackedOrientedBoxes)
-    information is simply printed to the commandline
+    Associates the two datasets a and b (in the form of Arrays of TrackedOrientedBoxes)
+    information is simply printed to the commandline and returned
     :param data_a: The list of TrackedOrientedBoxes for the fascare
     :param data_b: The list of TrackedOrientedBoxes for the viewcar2
     :return: Result of the association
@@ -358,7 +361,8 @@ def callback_tf_fascare(data):
     global transformer_fascare
 
     for tf_obj in data.transforms:
-        # Force time == 0 or you will run into issues TODO time==0 force here
+        # Forcing time==0 for the transformation to prevent issues that can potentially happen due to buffering or
+        # data pre-processing/manipulation.
         tf_obj.header.stamp = rospy.Time(0)
         transformer_fascare.setTransform(tf_obj)
 
@@ -370,7 +374,8 @@ def callback_tf_viewcar2(data):
     global transformer_viewcar2
 
     for tf_obj in data.transforms:
-        # Force time == 0 or you will run into issues TODO time==0 force here
+        # Forcing time==0 for the transformation to prevent issues that can potentially happen due to buffering or
+        # data pre-processing/manipulation.
         tf_obj.header.stamp = rospy.Time(0)
         transformer_viewcar2.setTransform(tf_obj)
 
@@ -441,10 +446,10 @@ def setup():
     """
     # VARIABLE DEFINITIONS
     global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity, do_ego_plot, do_assoc, velo_threshold, do_velo_cut
-    start_time = 430  # max is ~449.386
-    play_rate = 1
-    t2ta_thresh = 13
-    hist_size = rospy.Duration(5)
+    start_time = 222    # max is ~449.386
+    play_rate = 0.1
+    t2ta_thresh = 20
+    hist_size = rospy.Duration(0)
     state_space = (True, False, False, False)
     use_identity = True
     do_ego_plot = True
@@ -453,7 +458,10 @@ def setup():
     #   4 is pretty rough (empty at times) but clears everything up nicely
     #   3 was used widely during testing, works ok but leaves a bit of clutter
     #   2.5 has some clutter remaining, but still does fine overall
-    do_velo_cut = True  # True, if velocity should be cut down using the above threshold
+    do_velo_cut = False  # True, if velocity should be cut down using the above threshold
+
+    global publish_assoc_markers
+    publish_assoc_markers = False
 
     global append_ego
     append_ego = True  # If true, the viewcar2 will append an ego position with coord 0,0 and id=-2
