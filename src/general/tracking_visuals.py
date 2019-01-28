@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """
 This includes the TrackVisuals class, which can be used to display tracking data.
+
+Alternatively, visualization can be done in rviz by publishing MarkerArrays. This allows for easy overlaying of tracking
+data and original point clouds and is significantly faster.
 """
 import numpy as np
 import pandas as pd
@@ -19,12 +22,11 @@ class TrackVisuals:
     Use this to visualize tracking data.
     Displays points by x/y coordinates, annotates them with an id (numeric) and allows for setting of color.
 
-    Values are passed as three or four arrays (namely x, y, id, color) with color being optional. If no color is
-    specified, the color that was set during init will be used (defaults to red). The arrays should be of the same size.
-
     For example, point 3 will be drawn at (x[3], y[3]) in color color[3], and will be annotated based on id[3]
 
     Axis can be either symmetric by giving "None" as an upper limit for the y-Axis or can be specified during the init.
+
+    This is not optimized for performance.
     """
 
     fig = None  # Figure of the matplotlib graph
@@ -332,7 +334,7 @@ class TrackVisuals:
     def center_to_bottom_left(boxes):
         """
         Converts a set of rectangles with x/y as center coords to a set of boxes with bottom-left coordinates.
-        :param boxes: The original boxes
+        :param boxes: The original boxes as tuples (x, y, l, w, object_id, color) in an array
         :return: The boxes moved by half of their length/width to fit the usual rectangle definition.
         """
         adjusted = []
@@ -375,14 +377,15 @@ class TrackVisuals:
     def set_limits(self):
         """
         Set the x and y limits on the axis to the set values.
-        Necessary if some function calls starts messing with the desired values.
+        Necessary if some function calls mess with the desired values.
         """
         plt.xlim(self.neg_limit, self.limit)
         plt.ylim(self.neg_limit_y, self.limit_y)
 
     def get_ax(self):
         """
-        Getter functin to get the ax object, if further manipulation of the graphic should be done outside of this class
+        Getter function to get the ax object, if further manipulation of the visuals
+        should be done outside of this class
         :return: The axis object of this TrackVisuals Objects
         """
         return self.ax

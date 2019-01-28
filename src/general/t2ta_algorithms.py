@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-First quick implementation of track to track association algorithms.
+This file contains the main association algorithms. Additionally, some necessary helper functions are included.
 """
 import numpy as np
 from bob_perception_msgs.msg import *
@@ -54,16 +54,22 @@ class TrackCluster:
 
 def t2ta_collected(tracks, threshold, distance):
     """
-    First implementation of the Multisensor Track-To-Track Association Algorithm presented in the following paper:
-    https://hal.archives-ouvertes.fr/hal-00740787/document.
+    This function is somewhat outdated. It can be replaced by t2ta_historic in most cases.
+    However, this allows for usage of arbitrary distance functions following a certain pattern, that do not take
+    tracking history into account
+
+    --------
+
+    Implementation of the Multisensor Track-To-Track Association Algorithm presented in the following paper:
+    https://hal.archives-ouvertes.fr/hal-00740787/document
 
     This version assumes that all sensor tracks have already been collected by the fusion center (and are passed as
     a single argument to this function). Management of different sensor tracks and synchronization issues needs to be
-    done by the fusion center that calls this function. (--> _collected in the name)
+    done by the fusion center that calls this function.
 
-    This version does not take into account track history. Therefore distance should be a function of type:
+    This version does not take track history into account. Therefore distance should be a function of type:
         (TrackedOrientedBox, TrackedOrientedBox) --> Float
-    You can also use a Function from the class SimilarityChecker, since these functions also take two OrientedBoxes
+    You can also use a function from the class SimilarityChecker, since these functions also take two OrientedBoxes
     as their parameter (and the only other parameter is the time diff, which defaults to 0)
     :param tracks: An array of arrays of TrackedOrientedBoxes. Each entry should contain the array of
                     TrackedOrientedBoxes that represents the tracking of a single sensor in the current time step.

@@ -29,6 +29,8 @@ class SimilarityChecker:
 
     This is therefore not used in any real application, but merely to showcase a simple example distance calculation.
 
+    -----------------------
+
     Class that implements methods for comparing two tracked objects wrt similarity.
     The methods of this class use hyperparameters (for example how to weight change in object angle vs change in pos.).
     Therefore, they cannot be easily implemented as static functions.

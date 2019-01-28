@@ -9,10 +9,23 @@ The bag data is plotted as usual.
 Association results are printed to the commandline, but can of course also be published to a new topic or handed over
 to a fusion centre that then performs T2TF with the resulting data
 
-
+Takes one optional argument: the name of the bag file in the data/ folder. if nothing is provided, the program idles 
+until rosbag play abc.bag is used to play another bag file.
+See README.txt for more information about directory structure.
 EXAMPLE CALL:
-rosrun T2TF_SST historic_assoc.py mavenNew_small.bag
-(assuming you are starting from a directory that has the subdirectory data/ which contains mavenNew_small.bag)
+rosrun coop_t2t historic_assoc.py mavenNew_small.bag
+(assuming you are in a directory that has the subdirectory data/ which contains mavenNew_small.bag)
+
+---
+Note regarding global variable use:
+The executable files all make heavy use of global variables, even though this is usually considered bad programming
+practice. All basic functions for association, fusion, etc. are not affected by this.
+It was simply used to allow for faster implementation, since this way information can be shared between callbacks for
+ROS subscribers and other functions.
+
+A more clean implementation would probably make use of a central instance of a class that can store all this 
+information, which would then be passed using kwargs.
+---
 """
 
 from general.tracking_visuals import *
@@ -32,9 +45,6 @@ import pickle
 from visualization_msgs.msg import MarkerArray
 import general.visual_publishing as vis_pub
 from manual_RA_match import avg_fusion
-
-# --- Definiton of global variables
-# [...]
 
 
 # --- callback functions
@@ -151,7 +161,7 @@ def callback_tracking(data):
                     avg_dist.append(dist)
                     # print("No. assoc:"+str(len(avg_dist))+"\t Avg Distance: "+str(sum(avg_dist)/len(avg_dist)))
 
-                # DYNAMIC OFFSET CHANGING
+                # DYNAMIC OFFSET CHANGING -- only for testing purposes!
                 # dynamically modify the offset of the c2x vehicle
                 # in every step, check if reducing or increasing the offset by c2x_offset_test will improve the
                 # distance between the 2 associated objects
@@ -319,9 +329,6 @@ def callback_c2x_tf(data):
     steps = 0
 
 
-# --- listener and global stuff
-
-
 def listener(args):
     """
     Prepare the subscribers and setup the plot etc
@@ -351,15 +358,14 @@ def listener(args):
         # now start a rosbag play for that filename
         FNULL = open(os.devnull, 'w')  # redirect rosbag play output to devnull to suppress it
 
-        play_rate = 0.1  # set the number to whatever you want your play-rate to be
-        # play_rate = 1
+        global play_rate
         rate = '-r' + str(play_rate)
         # using '-r 1' is the usual playback speed - this works, but since the code lags behind (cant process everything
         # in realtime), you will then get results after the bag finished playing (cached results)
         # using '-r 0.25' is still too fast for maven-1.bag
         # using '-r 0.2' works (bag finishes and no more associations are made on buffered data afterwards)
 
-        start_time = 200  # time at which the bag should start playing
+        global start_time
         time = '-s ' + str(start_time)
         if start_time > 0:
             pkl_filename = "./src/T2TF_SST/data/"  # folder
@@ -440,6 +446,10 @@ def setup(args=None):
     global plot_bounding_boxes
     plot_bounding_boxes = False  # Set to True if you want to plot bounding boxes, False for a scatterplot of objects
     # (Bounding box data is not transformed, so the sizes will be correct but the rotation might be off)
+
+    global play_rate, start_time
+    play_rate = 0.5
+    start_time = 0
 
     # Check which arguments should be used (parameter if possible, else sys.argv)
     if args is None:

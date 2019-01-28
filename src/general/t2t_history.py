@@ -1,12 +1,16 @@
 #!/usr/bin/env python
 """
 Contains:
-    TrackingHistory class that stores all historic tracks for a (sensor_id, object_id)
+    TrackingHistory class that stores all historic tracks for an object identified by a tuple (sensor_id, object_id).
     t2tdistance functions that include history in their calculations.
 
 All this needs to be used by the t2ta_historic function that is implemented in t2ta_algorithms.py.
 
-Additionally, some helper functions related to this are implemented.
+Additionally, some helper functions related to this are implemented in this file.
+
+The important function in this file that should be used by association algorithms is "t2t_distance_historic", which
+is the equivalent of the distance "D" in the paper https://hal.archives-ouvertes.fr/hal-00740787/document.
+The single-time distance "d" from that paper is implemented in  the function "t2t_distance_box".
 """
 import rospy
 import numpy
@@ -19,7 +23,7 @@ import time
 class TrackingHistory:
     """
     TrackingHistory class that stores all historic tracks for a tuple (sensor_id, object_id).
-    These can be accessed based on time stamp using get_timed, which is the recommended way go
+    These can be accessed based on time stamp using get_timed, which is the recommended way.
     """
     sensor_id_list = []  # List of strings of sensor ids
 
@@ -101,6 +105,9 @@ class TrackingHistory:
 
     def get_absolute(self, object_id, sensor_name, time=-1, hist_size=1):
         """
+        As outlined below, this function can only be used under certain assumption that real data will not fulfill.
+        Therefore it is recommended to use get_timed instead
+
         Acquire tracks for the set of identification parameters.
         A hist_size of 1 means only a single track will be returned.
 

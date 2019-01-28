@@ -3,7 +3,7 @@
 Contains the class definition for the coordinator of the simulation.
 
 This class stores multiple SimulatedVehicles and provides functions to acquire measurements or ground truth data for
-all these at the same time.
+all these at the same time. Therefore, only a single SimulationCoordinator object is necessary
 """
 import rospy
 import numpy as np
@@ -13,7 +13,9 @@ import bob_perception_msgs.msg as bobmsg
 
 class SimulationCoordinator:
     """
-    The SimulationCoordinator creates and manages objects and the publishing of data
+    The SimulationCoordinator creates and manages objects and the publishing of data regarding all these objects.
+    Every object is a SimulatedVehicle and due to that stores information about: object_id, x-pos, y-pos, angle,
+    width and length of the tracking bounding box, x-velocity, y-velocity.
     """
 
     vehicles = []  # The list of SimulatedVehicles that is being tracked
@@ -38,11 +40,11 @@ class SimulationCoordinator:
             next_y = start_y + offset_y * x
             next_car = SimulatedVehicle(oid=x, x=next_x, y=next_y, vel_x=vel_x, vel_y=vel_y)
             self.vehicles.append(next_car)
-        # Created all vehicles
 
     def add_vehicle(self, oid, x=0.0, y=0.0, angle=0.0, length=0.0, width=0.0, vel_x=0.0, vel_y=0.0):
         """
-        Adds a new vehicle to the list of vehicles that is being simulated.
+        Adds a new vehicle to the list of vehicles that are being simulated. At least an object_id for the new vehicle
+        needs to be provided.
         :param oid: Object ID of the new vehicle
         :param x: x position of the new vehicle
         :param y: y position of the new vehicle
@@ -58,10 +60,9 @@ class SimulationCoordinator:
 
     def small_highway_init(self):
         """
-        Very simple init function that creates a few cars that move along a "highway" in both directions (up/down) and
+        Simple init function that creates a few cars that move along a "highway" in both directions (up/down) and
         in two lanes. 3 cars per side will be going at a slow pace (right lane) and one will pass them in the left lane.
         """
-        # Simple init function that creates a few cars that drive along a small highway
         self.add_vehicle(0, 10, -50, 0, 0, 0, 0, 2)
         self.add_vehicle(1, 10, -44, 0, 0, 0, 0, 2)
         self.add_vehicle(2, 10, -34, 0, 0, 0, 0, 2)
@@ -89,14 +90,14 @@ class SimulationCoordinator:
     def get_gaussian_box_array(self, sd_pos=0.5, sd_vel=0.1, sd_angle=0.1, sd_lw=-1, cov_example_id=0):
         """
         Returns a TrackedOrientedBoxArray that contains noisy TrackedOrientedBoxes of all currently tracked vehicles.
-        This data is based on noisy data, using a gaussian measurement error centered around the true data, with a
+        Noise is generated using a gaussian measurement error centered around the true data, with a
         standard deviation according to the parameters.
-        A parameter < 0 causes this to return the true data for the respective entries.
         :param sd_pos: Standard deviation for the position (both x and y)
         :param sd_vel: Standard deviation for the velocity (in both x and y direction)
         :param sd_angle: Standard deviation for the angle of the vehicle
         :param sd_lw: Standard deviation for the length and width of the box.
-        :param cov_example_id: The id of the example covariance to be used (imported from maven-1.bag)
+        :param cov_example_id: The id of the example covariance to be used (imported from maven-1.bag). Not currently
+        used.
         :return: TrackedOrientedBoxArray of the noisy position of all vehicles, using gaussian noise.
         """
         h = SimulatedVehicle.create_def_header()  # create a default stamped header
@@ -104,6 +105,8 @@ class SimulationCoordinator:
         for v in self.vehicles:
             array.append(v.get_gaussian_box(sd_pos=sd_pos, sd_vel=sd_vel, sd_angle=sd_angle, sd_lw=sd_lw,
                                             cov_example_id=cov_example_id))
+            # cov_example_id is only used if you want the gaussian box to be based on an example from the bag files
+            # currently, get_gaussian_box simply uses a diagonal matrix instead, and therefore ignores the parameter.
 
         # Create the return value, i.e. the object of the correct type
         r = bobmsg.TrackedOrientedBoxArray(header=h, tracks=array)
@@ -137,7 +140,7 @@ class SimulationCoordinator:
         """
         Returns a list of positions that is suitable for display using a TrackVisuals object. The returned lists can
         be passed to the TrackVisuals.plot_points_tuple function to display them.
-        This uses positions of the vehicles that are have gaussian noise
+        The "measured" values are noisy, with gaussian noise applied to them according to the parameters.
         :param stddev_pos: Standard deviation for the gaussian noise used for the position
         :param stddev_vel: Standard deviation for the gaussian noise used for the velocity
         :param color: The Color to be used, defaults to red

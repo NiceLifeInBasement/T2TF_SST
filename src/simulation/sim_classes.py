@@ -5,8 +5,8 @@ acquire measured data or ground truth data.
 
 The class also provides some static methods that might be useful in other situations.
 
-A full simulation should consist of more than one of these objects, that are managed by a central object.
-
+A full simulation should consist of more than one of these objects, that are managed by a central entity, for example
+a SimulationCoordinator.
 """
 import rospy
 import numpy as np
@@ -85,7 +85,8 @@ class SimulatedVehicle:
         :param sd_vel: Standard deviation for the velocity (in both x and y direction)
         :param sd_angle: Standard deviation for the angle of the vehicle
         :param sd_lw: Standard deviation for the length and width of the box.
-        :param cov_example_id: The id of the example covariance to be used (imported from maven-1.bag)
+        :param cov_example_id: The id of the example covariance to be used (imported from maven-1.bag).
+        Currently not used, since diagonal matrices are used for covariance matrices.
         :return: (Gaussian) Noisy information about this object in the TrackedOrientedBox format
         """
         # ----
@@ -128,10 +129,9 @@ class SimulatedVehicle:
         # The following are options for acquiring a correctly formatted covariance matrix
 
         # Acquire a cov mat from the example list
-        # cov_matrix = self.get_example_cov(example_id=cov_example_id)
+        # cov_matrix = self.get_example_cov(example_id=cov_example_id)  # --currently not in use
 
         # Acquire a cov mat from the sd values, var = sd^2 so we square the given values
-        # cov_matrix = self.get_random_cov(var_pos=sd_pos**2, var_vel=sd_vel**2, max_fac=1.15, min_fac=1.0)
         cov_matrix = self.get_diagonal_cov(var_pos=sd_pos**2, var_vel=sd_vel**2)
         # ----
         oriented_box = bobmsg.OrientedBox(header=header, center_x=noisy_center_x, center_y=noisy_center_y,
@@ -147,7 +147,7 @@ class SimulatedVehicle:
     def create_def_header(frame_id="ibeo_front_center"):
         """
         Creates a default header that can be used when creating objects for msgs.
-        :param frame_id: The frame_id to be set. Defaults to "ibeo_front_center" which is used in the real data.
+        :param frame_id: The frame_id to be set. Defaults to "ibeo_front_center".
         :return: The default header
         """
         # Header can have seq = 0, so we don't set it
@@ -187,7 +187,7 @@ class SimulatedVehicle:
     def vec_to_mat(vector):
         """
         Converts a vector to matrix with 0s everywhere, except for the diagonal which will have the vectors
-        value as entries
+        value as entries (i.e. converts a vector to a diagonal matrix)
         :param vector: The vector that will be converted to a matrix
         :return: A quadratic matrix of 0s with the vector entries on its diagonal
         """
@@ -259,7 +259,7 @@ class SimulatedVehicle:
         # PROBLEM/TO DO:
         #   Currently this can only deal with the case of position+velocity covariance
         #   All other cases currently produce an error
-        #   However, this is the only case present in the real data, so all testing was limited to it aswell.
+        #   However, this is the only case present in the real data, so all testing was limited to it as +well.
         #   A more complex algorithm (than the simple insertion) would be needed to accommodate arbitrary combinations
         if (var_pos is not None) and (var_angle is None) and (var_lw is None) and (var_vel is not None):
             # Default case

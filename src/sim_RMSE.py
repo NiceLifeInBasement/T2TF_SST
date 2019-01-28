@@ -9,7 +9,22 @@ No Visualization is done
 
 Parameters:
     1: std_dev base used for the measurements
-    2: additional std_dev used on top of std_dev (additive) for the second sensor
+    2: additional std_dev used on top of std_dev (literally additive) for the second sensor
+
+Example call to simulate two sensors with std_dev 2 and 3.5:
+rosrun coop_t2t sim_RMSE.py 2 1.5
+
+
+---
+Note regarding global variable use:
+The executable files all make heavy use of global variables, even though this is usually considered bad programming
+practice. All basic functions for association, fusion, etc. are not affected by this.
+It was simply used to allow for faster implementation, since this way information can be shared between callbacks for
+ROS subscribers and other functions.
+
+A more clean implementation would probably make use of a central instance of a class that can store all this
+information, which would then be passed using kwargs.
+---
 """
 import rospy
 import numpy
@@ -95,7 +110,7 @@ def setup():
 
     global dev_step
     dev_step = 0
-    if len(sys.argv)>2:
+    if len(sys.argv) > 2:
         dev_step = float(sys.argv[2])
 
     lock = thr.Lock()

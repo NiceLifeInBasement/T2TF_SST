@@ -1,17 +1,28 @@
 #!/usr/bin/env python
-from __future__ import print_function
 """
-Based on historic_assoc.py
+This script plays multiple bags (the two bags from the roundabout situation). One bag is played with additional delay
+(the one that starts slightly early). Therefore the two bags are played at the same time.
 
-This plays multiple bags (the two bags from the roundabout situation). One bag has an additional delay (the one that 
-starts slightly early). Therefore the two bags are played at the same time.
-
-This program sets up subscribers for both files, and converts information from the viewcar2 object to UTM and from 
-there into the fixed frame ibeo_front_center of the fascare object.
+This program sets up subscribers for both files, and converts information from the viewcar2 car to UTM and from
+there into the fixed frame ibeo_front_center of the fascare car.
 
 Afterwards, the data is associated, and results are printed.
-"""
 
+This does not take any parameters, so it can simply be started using
+rosrun coop_t2t manual_RA_match.py
+
+---
+Note regarding global variable use:
+The executable files all make heavy use of global variables, even though this is usually considered bad programming
+practice. All basic functions for association, fusion, etc. are not affected by this.
+It was simply used to allow for faster implementation, since this way information can be shared between callbacks for
+ROS subscribers and other functions.
+
+A more clean implementation would probably make use of a central instance of a class that can store all this
+information, which would then be passed using kwargs.
+---
+"""
+from __future__ import print_function
 from general.tracking_visuals import *
 import matplotlib.pyplot as plt
 import subprocess
@@ -51,7 +62,7 @@ def velocity_cut(data):
 
 def callback_fascare(data):
     """
-    Callback function for the fascare object.
+    Callback function for the fascare car.
 
     In addition to the received data, data from the viewcar2 data buffer is used
     """
@@ -63,7 +74,6 @@ def callback_fascare(data):
     try:
         viewcar2_odom_data
     except NameError:
-        # Alternativly: consider a quick display of the information
         return  # No viewcar2 data was received so far, simply skip this step
 
     if len(data.boxes) == 0:
@@ -77,7 +87,10 @@ def callback_fascare(data):
     if do_visual_plot:
         visuals.scatter_box_array(data.boxes, append=False, color="b", alpha=transparency, annotate=(not focus_association))
 
-    vc_data = viewcar2_odom_data[-1]  # TODO maybe do this based on timestamp instead of -1
+    # Currently the most recently stored entry is used as viewcar data.
+    # In a more general case, where varying sensor transmission frequency needs to be taken into account, this should
+    # instead use a function that determines the closest match w.r.t. time stamps.
+    vc_data = viewcar2_odom_data[-1]
 
     # Transform the last set of viewcar2_data into this frames ibeo_front_center
     src_id = "odom"
@@ -154,7 +167,7 @@ def callback_fascare(data):
             visuals.scatter_box_array([ego_viewcar2], append=True, color="y", alpha=1, annotate=False)
     # ---
 
-    # now to the association:
+    # now do the association:
     # first, add the two tracks to the history
     global do_assoc
     if do_assoc:
@@ -163,7 +176,7 @@ def callback_fascare(data):
         history.add("viewcar2", vc_data.boxes)
         assoc = t2tassoc(data.boxes, vc_data.boxes)
 
-        global do_visual_plot
+        global do_visual_plot  # check if visual plot is wanted
         if do_visual_plot and focus_association:  # Extra plot for associated objects
             assoc_boxes = non_singletons(assoc)
             visuals.scatter_box_array(assoc_boxes, append=True, color="r", alpha=1, annotate=True)
@@ -380,8 +393,13 @@ def callback_tf_viewcar2(data):
         transformer_viewcar2.setTransform(tf_obj)
 
 
-def listener(start, speed):
-    # --- SETUP OF NODE ---
+def listener(start=0, speed=1):
+    """
+    Creates the ROS node, starts playing the bag files etc.
+    In general, starts execution of the program.
+    :param start: starttime for the ROS bag playing
+    :param speed: playback speed for the ROS bag
+    """
     rospy.init_node('listener_dual_roundabout', anonymous=True)
 
     rospy.Subscriber("/tracked_objects/scan", TrackedLaserScan, callback_fascare)  # General subscriber (tracking data)
@@ -435,14 +453,14 @@ def listener(start, speed):
     else:
         rospy.spin()
 
-    # Kill the processes after the matplotlib window was closed
+    # Kill the processes after the matplotlib window was closed / node execution was stopped using ctrl-C
     fascare_proc.terminate()
     viewcar2_proc.terminate()
 
 
 def setup():
     """
-    Setup all necessary variables etc, and start the listener
+    Setup all necessary variables etc, and start the listener (which inits the execution of the program)
     """
     # VARIABLE DEFINITIONS
     global start_time, play_rate, t2ta_thresh, hist_size, state_space, use_identity, do_ego_plot, do_assoc, velo_threshold, do_velo_cut
